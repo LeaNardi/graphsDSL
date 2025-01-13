@@ -25,10 +25,22 @@ data BoolExp = BTrue
              | Not BoolExp
  deriving (Show,Eq)
 
+  -- Grafos
+type Node = Integer
+type Weight = Double
+newtype Graph = Graph [(Node, [(Node, Weight)])] deriving (Show,Eq)
+
+
+-- Para tratar valores de Int o Graphs
+-- data Value = VInt IntExp
+--            | VGraph Graph
+--            deriving (Show, Eq)
+
 -- Comandos (sentencias)
 -- Observar que solo se permiten variables de un tipo (entero)
 data Comm = Skip
           | Let Variable IntExp
+          | LetGraph Variable Graph -- Ver de hacer conjuntamente con IntExp
           | Seq Comm Comm
           | Cond BoolExp Comm Comm
           | Repeat Comm BoolExp

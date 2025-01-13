@@ -11,7 +11,7 @@ main :: IO ()
 main = do   args <- getArgs
             case args of
                 (arg:_) ->  run arg
-                []      ->  putStrLn "Formato esperado: runghc Main.hs Programas/fact.lis"
+                []      ->  putStrLn "Formato esperado: runghc Main.hs Programas/grafo1.gph"
     
 
 -- Ejecuta un programa a partir de su archivo fuente

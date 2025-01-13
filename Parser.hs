@@ -84,6 +84,48 @@ boolvalue = try (do reserved lis "true"
                         return BFalse)
 
 -----------------------------------
+-- Parser para grafos
+-----------------------------------
+graph :: Parser Graph
+graph = do
+  reservedOp lis "Graph"
+  nodes <- nodeList
+  return (Graph nodes)
+
+nodeList :: Parser [(Node, [(Node, Weight)])]
+nodeList = do 
+    reservedOp lis "["
+    nodes <- nodeEntry `sepBy` (reservedOp lis ",")
+    reservedOp lis "]"
+    return nodes
+
+nodeEntry :: Parser (Node, [(Node, Weight)])
+nodeEntry = do
+  reservedOp lis "("
+  node <- integer lis
+  reservedOp lis ","
+  edges <- edgeList
+  reservedOp lis ")"
+  return (node, edges)
+
+edgeList :: Parser [(Node, Weight)]
+edgeList = do
+  reservedOp lis "["
+  edges <- edgeEntry `sepBy` (reservedOp lis ",")
+  reservedOp lis "]"
+  return edges
+
+edgeEntry :: Parser (Node, Weight)
+edgeEntry = do
+  reservedOp lis "("
+  destNode <- integer lis
+  reservedOp lis ","
+  weight <- float lis
+  reservedOp lis ")"
+  return (destNode, weight)
+
+
+-----------------------------------
 --- Parser de comandos
 -----------------------------------
 comm :: Parser Comm
@@ -106,6 +148,10 @@ comm2 = try (do reserved lis "skip"
                     cond <- boolexp
                     reserved lis "end"
                     return (Repeat c cond))
+        <|> try (do str <- identifier lis
+                    reservedOp lis ":="
+                    e <- graph
+                    return (LetGraph str e))
         <|> try (do str <- identifier lis
                     reservedOp lis ":="
                     e <- intexp
