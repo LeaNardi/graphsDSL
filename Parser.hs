@@ -8,14 +8,14 @@ import ASTGraphs
 -- Funcion para facilitar el testing del parser.
 totParser :: Parser a -> Parser a
 totParser p = do 
-                  whiteSpace lis
+                  whiteSpace gdsl
                   t <- p
                   eof
                   return t
 
 -- Analizador de Tokens
-lis :: TokenParser u
-lis = makeTokenParser (emptyDef   { commentStart  = "/*"
+gdsl :: TokenParser u
+gdsl = makeTokenParser (emptyDef   { commentStart  = "/*"
                                   , commentEnd    = "*/"
                                   , commentLine   = "//"
                                   , opLetter      = char '='
@@ -30,37 +30,37 @@ intexp  = chainl1 term addopp
 
 term = chainl1 factor multopp
 
-factor = try (parens lis intexp)
-         <|> try (do reservedOp lis "-"
+factor = try (parens gdsl intexp)
+         <|> try (do reservedOp gdsl "-"
                      f <- factor
                      return (UMinus f))
-         <|> (do n <- integer lis
+         <|> (do n <- integer gdsl
                  return (Const n)
-              <|> do str <- identifier lis
+              <|> do str <- identifier gdsl
                      return (Var str))
                  
-multopp = do try (reservedOp lis "*")
+multopp = do try (reservedOp gdsl "*")
              return Times
-          <|> do try (reservedOp lis "/")
+          <|> do try (reservedOp gdsl "/")
                  return Div
  
-addopp = do try (reservedOp lis "+")
+addopp = do try (reservedOp gdsl "+")
             return Plus
-         <|> do try (reservedOp lis "-")
+         <|> do try (reservedOp gdsl "-")
                 return Minus
 
 -----------------------------------
 --- Parser de expressiones booleanas
 ------------------------------------
 boolexp :: Parser BoolExp
-boolexp  = chainl1 boolexp2 (try (do reservedOp lis "|"
+boolexp  = chainl1 boolexp2 (try (do reservedOp gdsl "|"
                                      return Or))
 
-boolexp2 = chainl1 boolexp3 (try (do reservedOp lis "&"
+boolexp2 = chainl1 boolexp3 (try (do reservedOp gdsl "&"
                                      return And))
 
-boolexp3 = try (parens lis boolexp)
-           <|> try (do reservedOp lis "~"
+boolexp3 = try (parens gdsl boolexp)
+           <|> try (do reservedOp gdsl "~"
                        b <- boolexp3
                        return (Not b))
            <|> intcomp
@@ -71,16 +71,16 @@ intcomp = try (do i <- intexp
                   j <- intexp
                   return (c i j))
 
-compopp = try (do reservedOp lis "="
+compopp = try (do reservedOp gdsl "="
                   return Eq)
-          <|> try (do reservedOp lis "<"
+          <|> try (do reservedOp gdsl "<"
                       return Lt)
-          <|> try (do reservedOp lis ">"
+          <|> try (do reservedOp gdsl ">"
                       return Gt)
 
-boolvalue = try (do reserved lis "true"
+boolvalue = try (do reserved gdsl "true"
                     return BTrue)
-            <|> try (do reserved lis "false"
+            <|> try (do reserved gdsl "false"
                         return BFalse)
 
 -----------------------------------
@@ -88,40 +88,40 @@ boolvalue = try (do reserved lis "true"
 -----------------------------------
 graph :: Parser Graph
 graph = do
-  reservedOp lis "Graph"
+  reservedOp gdsl "Graph"
   nodes <- nodeList
   return (Graph nodes)
 
 nodeList :: Parser [(Node, [(Node, Weight)])]
 nodeList = do 
-    reservedOp lis "["
-    nodes <- nodeEntry `sepBy` (reservedOp lis ",")
-    reservedOp lis "]"
+    reservedOp gdsl "["
+    nodes <- nodeEntry `sepBy` (reservedOp gdsl ",")
+    reservedOp gdsl "]"
     return nodes
 
 nodeEntry :: Parser (Node, [(Node, Weight)])
 nodeEntry = do
-  reservedOp lis "("
-  node <- integer lis
-  reservedOp lis ","
+  reservedOp gdsl "("
+  node <- integer gdsl
+  reservedOp gdsl ","
   edges <- edgeList
-  reservedOp lis ")"
+  reservedOp gdsl ")"
   return (node, edges)
 
 edgeList :: Parser [(Node, Weight)]
 edgeList = do
-  reservedOp lis "["
-  edges <- edgeEntry `sepBy` (reservedOp lis ",")
-  reservedOp lis "]"
+  reservedOp gdsl "["
+  edges <- edgeEntry `sepBy` (reservedOp gdsl ",")
+  reservedOp gdsl "]"
   return edges
 
 edgeEntry :: Parser (Node, Weight)
 edgeEntry = do
-  reservedOp lis "("
-  destNode <- integer lis
-  reservedOp lis ","
-  weight <- float lis
-  reservedOp lis ")"
+  reservedOp gdsl "("
+  destNode <- integer gdsl
+  reservedOp gdsl ","
+  weight <- float gdsl
+  reservedOp gdsl ")"
   return (destNode, weight)
 
 
@@ -129,31 +129,31 @@ edgeEntry = do
 --- Parser de comandos
 -----------------------------------
 comm :: Parser Comm
-comm = chainl1 comm2 (try (do reservedOp lis ";"
+comm = chainl1 comm2 (try (do reservedOp gdsl ";"
                               return Seq))
 
-comm2 = try (do reserved lis "skip"
+comm2 = try (do reserved gdsl "skip"
                 return Skip)
-        <|> try (do reserved lis "if"
+        <|> try (do reserved gdsl "if"
                     cond <- boolexp
-                    reserved lis "then"
+                    reserved gdsl "then"
                     case1 <- comm
-                    reserved lis "else"
+                    reserved gdsl "else"
                     case2 <- comm
-                    reserved lis "end"
+                    reserved gdsl "end"
                     return (Cond cond case1 case2))
-        <|> try (do reserved lis "repeat"
+        <|> try (do reserved gdsl "repeat"
                     c <- comm
-                    reserved lis "until"
+                    reserved gdsl "until"
                     cond <- boolexp
-                    reserved lis "end"
+                    reserved gdsl "end"
                     return (Repeat c cond))
-        <|> try (do str <- identifier lis
-                    reservedOp lis ":="
+        <|> try (do str <- identifier gdsl
+                    reservedOp gdsl ":="
                     e <- graph
                     return (LetGraph str e))
-        <|> try (do str <- identifier lis
-                    reservedOp lis ":="
+        <|> try (do str <- identifier gdsl
+                    reservedOp gdsl ":="
                     e <- intexp
                     return (Let str e))
 

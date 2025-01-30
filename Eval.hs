@@ -1,99 +1,158 @@
-module Eval (eval) where
+module Eval (eval) where -- antiguo eval4
 
-import ASTGraphs
+import AST
+import Control.Applicative (Applicative(..))
+import Control.Monad       (liftM, ap)  
+
 
 -- Estados
-data Error = UndefVar | DivByZero deriving (Show,Eq)
-type State = Either Error [(Variable,Integer)]
+type Env = [(Variable,Integer)]
 
 -- Estado nulo
-initState :: State
-initState = Right []
+initState :: Env
+initState = []
 
--- Busca el valor de una variabl en un estado
--- Completar la definicion
-lookfor :: Variable -> State -> Either Error Integer
-lookfor v (Right s) = lookfor' v s
+-- Mónada estado-error-tick
+newtype StateErrorTick a = StateErrorTick { runStateErrorTick :: Env -> Maybe (a, Env, Integer) }
 
-lookfor' :: Variable -> [(Variable,Integer)] -> Either Error Integer
-lookfor' var [] = Left UndefVar
-lookfor' var ((x,y):xs)= if var == x then Right y
-                                    else lookfor' var xs
+instance Monad StateErrorTick where
+    return x = StateErrorTick (\s -> Just (x, s, 0))
+    m >>= f = StateErrorTick (\s -> do (v, s', t) <- runStateErrorTick m s
+                                       (v', s'', t') <- runStateErrorTick (f v) s'
+                                       return (v', s'', t + t'))
+--    m >>= f = StateErrorTick (\s -> case runStateErrorTick m s of
+--                                      Nothing -> Nothing
+--                                      Just (v, s', t) -> case runStateErrorTick (f v) s' of
+--                                                           Nothing -> Nothing
+--                                                           Just (v', s'', t') -> Just (v', s'', t + t'))
 
--- Cambia el valor de una variable en un estado
--- Completar la definicion
-update :: Variable -> Integer -> [(Variable,Integer)] -> [(Variable,Integer)]
-update var valor [] = [(var,valor)]
-update var valor ((x,y):xs) = if var == x then (var,valor):xs
-                                          else (x,y): update var valor xs
+-- Clase para representar mónadas con estado de variables.
+class Monad m => MonadState m where
+    lookfor :: Variable -> m Integer
+    update :: Variable -> Integer -> m ()
+    saveState :: m Env
+    putState :: Env -> m ()
+
+instance MonadState StateErrorTick where
+    lookfor var = StateErrorTick (\s -> maybe Nothing (\v -> Just (v, s, 0)) (lookfor' var s))
+                  where lookfor' var []               = Nothing
+                        lookfor' var ((var', val):ss) | var == var' = Just val
+                                                      | otherwise   = lookfor' var ss
+    update var val = StateErrorTick (\s -> Just ((), update' var val s, 0))
+                     where update' var val [] = [(var, val)]
+                           update' var val ((var', val'):ss) | var == var' = (var, val):ss
+                                                             | otherwise   = (var', val'):(update' var val ss)
+
+    saveState = StateErrorTick (\s -> Just (s, s, 0))
+    putState r = StateErrorTick (\s -> Just ((), r, 0))
+
+
+-- Clase para representar mónadas que lanzan errores.
+class Monad m => MonadError m where
+    throw :: m a
+
+instance MonadError StateErrorTick where
+    throw = StateErrorTick (\_ -> Nothing)
+
+-- Clase para representar mónadas que cuentan operaciones.
+class Monad m => MonadTick m where
+    tick :: m ()
+
+instance MonadTick StateErrorTick where
+    tick = StateErrorTick (\s -> Just ((), s, 1))
+
+-- Para calmar al GHC
+instance Functor StateErrorTick where
+    fmap = liftM
+
+instance Applicative StateErrorTick where
+    pure = return
+    (<*>) = ap
+
 
 -- Evalua un programa en el estado nulo
-eval :: Comm -> State
-eval p = evalComm p initState
+eval :: Comm -> (Env, Integer) --int a integer
+eval p = case runStateErrorTick (evalComm p) initState of
+    Just (v, s, t) -> (s, t) 
+    Nothing        -> error "ERROR!"
 
-unR (Right x) = x
 -- Evalua un comando en un estado dado
--- Completar definicion
-evalComm :: Comm -> State -> State
-evalComm Skip e = e
-evalComm (Let var expInt) estado = let valor = evalIntExp expInt estado
-                                       in case valor of
-                                               Right v -> Right (update var v (unR estado))
-                                               Left er -> Left er
-evalComm (Seq Skip c1) s = evalComm c1 s
-evalComm (Seq c1 c2) s = let s' = evalComm c1 s
-                                  in evalComm (Seq Skip c2) s'
-evalComm (Cond b c1 c2) s = case (evalBoolExp b s) of
-                                    Right True -> evalComm c1 s
-                                    Right False -> evalComm c2 s
-                                    Left er -> Left er
-evalComm (Repeat c b) s = evalComm (Seq c (Cond b Skip (Repeat c b))) s
--- Evalua una expresion entera
--- Completar definicion
-evalIntExp :: IntExp -> State -> Either Error Integer
-evalIntExp (Const valor) estado = Right valor
-evalIntExp (Var variable) estado = lookfor variable estado
-evalIntExp (UMinus expInt) estado = let valor = evalIntExp expInt estado
-                                    in case valor of
-                                            Right x1 -> Right (-x1)
-evalIntExp (Plus exp1 exp2) estado = propagar exp1 exp2 (+) estado
-evalIntExp (Minus exp1 exp2) estado = propagar exp1 exp2 (-) estado
-evalIntExp (Times exp1 exp2) estado = propagar exp1 exp2 (*) estado
+evalComm :: (MonadState m, MonadError m, MonadTick m) => Comm -> m ()
+evalComm Skip           = return ()
+evalComm (Let v e)      = do val <- evalIntExp e
+                             update v val
+evalComm (Seq l r)      = do evalComm l
+                             evalComm r
+evalComm (Cond b tc fc) = do bval <- evalBoolExp b
+                             if bval then evalComm tc
+                             else evalComm fc
+evalComm (While b c)    = do bval <- evalBoolExp b
+                             if bval then evalComm (Seq c (While b c))
+                             else return ()
 
-evalIntExp (Div exp1 exp2) estado = case (evalIntExp exp1 estado) of
-                                           Right x1 -> case (evalIntExp exp2 estado) of
-                                                               Right 0  -> Left DivByZero
-                                                               Right x2 -> Right (div x1 x2)
-                                                               Left er -> Left er
-                                           Left er -> Left er
+evalComm (Forstep e1 e2 t c) = do n1 <- evalIntExp e1
+                                  n2 <- evalIntExp e2
+                                  st <- evalIntExp t
+                                  if n2 > n1 then evalComm (Seq c (Forstep (Plus e1 (Const st)) e2 t c))
+                                  else evalComm Skip
+ 
+evalComm (Envir v c) = do o <- saveState 
+                          evalComm c 
+                          v' <- lookfor v
+                          putState o
+                          final <- update v (v')
+                          return final  
 
-propagar e1 e2 op s =  let valor1 = evalIntExp e1 s
-                           valor2 = evalIntExp e2 s
-                                          in case valor1 of
-                                                  Right x1 -> case valor2 of
-                                                                   Right x2 -> Right ((op) x1 x2)
-                                                                   Left er -> Left er
-                                                  Left er -> Left er
+-- Evalua una expresion entera, sin efectos laterales
+evalIntExp :: (MonadState m, MonadError m, MonadTick m) => IntExp -> m Integer 
+evalIntExp (Const n)   = return n
+evalIntExp (Var v)     = do val <- lookfor v
+                            return val
+evalIntExp (UMinus e)  = do val <- evalIntExp e
+                            return (negate val)
+evalIntExp (Plus l r)  = do lval <- evalIntExp l
+                            rval <- evalIntExp r
+                            tick
+                            return (lval + rval)
+evalIntExp (Minus l r) = do lval <- evalIntExp l
+                            rval <- evalIntExp r
+                            tick
+                            return (lval - rval)
+evalIntExp (Times l r) = do lval <- evalIntExp l
+                            rval <- evalIntExp r
+                            tick
+                            return (lval * rval)
+evalIntExp (Div l r)   = do lval <- evalIntExp l
+                            rval <- evalIntExp r
+                            if rval == 0 then throw
+                            else do tick
+                                    return (div lval rval)
+evalIntExp (Mod l r)   = do lval <- evalIntExp l 
+                            rval <- evalIntExp r
+                            if rval == 0 then throw
+                            else do tick
+                                    return (mod lval rval)
 
-propagarB e1 e2 op s =  let valor1 = evalBoolExp e1 s
-                            valor2 = evalBoolExp e2 s
-                                          in case valor1 of
-                                                  Right x1 -> case valor2 of
-                                                                   Right x2 -> Right ((op) x1 x2)
-                                                                   Left er -> Left er
-                                                  Left er -> Left er
+-- Evalua una expresion entera, sin efectos laterales
+evalBoolExp :: (MonadState m, MonadError m, MonadTick m) => BoolExp -> m Bool
+evalBoolExp BTrue     = return True
+evalBoolExp BFalse    = return False
+evalBoolExp (Eq l r)  = do lval <- evalIntExp l
+                           rval <- evalIntExp r
+                           return (lval == rval)
+evalBoolExp (Lt l r)  = do lval <- evalIntExp l
+                           rval <- evalIntExp r
+                           return (lval < rval)
+evalBoolExp (Gt l r)  = do lval <- evalIntExp l
+                           rval <- evalIntExp r
+                           return (lval > rval)
+evalBoolExp (And l r) = do lval <- evalBoolExp l
+                           rval <- evalBoolExp r
+                           return (lval && rval)
+evalBoolExp (Or l r)  = do lval <- evalBoolExp l
+                           rval <- evalBoolExp r
+                           return (lval || rval)
+evalBoolExp (Not b)   = do bval <- evalBoolExp b
+                           return (not bval)
 
 
--- Evalua una expresion entera
--- Completar definicion
-evalBoolExp :: BoolExp -> State -> Either Error Bool
-evalBoolExp BTrue estado = Right True
-evalBoolExp BFalse estado = Right False
-evalBoolExp (Eq exp1 exp2) estado = propagar exp1 exp2 (==) estado
-evalBoolExp (Lt exp1 exp2) estado = propagar exp1 exp2 (<) estado
-evalBoolExp (Gt exp1 exp2) estado = propagar exp1 exp2 (>) estado
-evalBoolExp (And exp1 exp2) estado = propagarB exp1 exp2 (&&) estado
-evalBoolExp (Or exp1 exp2) estado = propagarB exp1 exp2 (||) estado
-evalBoolExp (Not exp1) estado = case (evalBoolExp exp1 estado) of
-                                      Right x1 -> Right (not x1)
-                                      Left er -> Left er
