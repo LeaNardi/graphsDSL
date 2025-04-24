@@ -1,9 +1,10 @@
 ASTGraphs.o
 ASTGraphs.hi
 Eval.hi
-Main.o
+Eval.o
 Parser.hi
 Parser.o
-Main
-Eval.o
 Main.hi
+Main.o
+Main
+Main.exe
