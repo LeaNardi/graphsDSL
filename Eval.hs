@@ -6,7 +6,7 @@ import Control.Monad       (liftM, ap)
 
 
 -- Estados
-type Env = [(Variable,Integer)]
+type Env = [(Variable,Integer)] -- J Por que acepta solamente Integer. Averiguar. Dobry usa todo Double
 
 -- Estado nulo
 initState :: Env
