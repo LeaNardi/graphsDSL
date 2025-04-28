@@ -8,3 +8,6 @@ Main.hi
 Main.o
 Main
 Main.exe
+ASTGraphs copy.hs
+Eval copy.hs
+Parser copy.hs

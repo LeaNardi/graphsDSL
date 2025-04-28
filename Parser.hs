@@ -1,166 +1,165 @@
-module Parser (parseComm) where
+module Parser where
 
 import Text.ParserCombinators.Parsec
 import Text.Parsec.Token
 import Text.Parsec.Language (emptyDef)
-import Text.Parsec.Expr (buildExpressionParser, Assoc(..), Operator(..))
 import ASTGraphs
+
+-- Funcion para facilitar el testing del parser.
+totParser :: Parser a -> Parser a
+totParser p = do 
+                  whiteSpace gdsl
+                  t <- p
+                  eof
+                  return t
 
 -- Analizador de Tokens
 gdsl :: TokenParser u
-gdsl = makeTokenParser (emptyDef {
-    reservedNames = ["let", "letgraph", "if", "then", "else", "repeat", "until", "kruskal", "emptygraph", "addedge", "true", "false", "not", "and", "or", "skip"],
-    reservedOpNames = ["=", ";", "+", "-", "*", "/", "%", "==", "<", ">", "not", "and", "or", "{", "}"]
-})
+gdsl = makeTokenParser (emptyDef   { commentStart  = "/*"
+                                  , commentEnd    = "*/"
+                                  , commentLine   = "//"
+                                  , opLetter      = char '='
+                                  , reservedNames = ["true","false","skip","if",
+                                                     "then","else","end",
+                                                     "while","do", "repeat"]})
+----------------------------------
+--- Parser de expressiones enteras
+-----------------------------------
+intexp :: Parser IntExp
+intexp  = chainl1 term addopp
 
+term = chainl1 factor multopp
 
-intExp :: Parser IntExp
-intExp = buildExpressionParser table term
-  where
-    table = [ [Prefix (reservedOp gdsl "-" >> return UMinus)]
-            , [Infix  (reservedOp gdsl "*" >> return Times) AssocLeft]
-            , [Infix  (reservedOp gdsl "/" >> return Div) AssocLeft]
-            , [Infix  (reservedOp gdsl "%" >> return Mod) AssocLeft]
-            , [Infix  (reservedOp gdsl "+" >> return Plus) AssocLeft]
-            , [Infix  (reservedOp gdsl "-" >> return Minus) AssocLeft]
-            ]
-    term = parens gdsl intExp
-        <|> fmap Var (identifier gdsl)
-        <|> fmap (Const . toInteger) (natural gdsl)
+factor = try (parens gdsl intexp)
+         <|> try (do reservedOp gdsl "-"
+                     f <- factor
+                     return (UMinus f))
+         <|> (do n <- integer gdsl
+                 return (Const n)
+              <|> do str <- identifier gdsl
+                     return (Var str))
+                 
+multopp = do try (reservedOp gdsl "*")
+             return Times
+          <|> do try (reservedOp gdsl "/")
+                 return Div
+ 
+addopp = do try (reservedOp gdsl "+")
+            return Plus
+         <|> do try (reservedOp gdsl "-")
+                return Minus
 
-boolExp :: Parser BoolExp
-boolExp = buildExpressionParser table bterm
-  where
-    table = [ [Prefix (reservedOp gdsl "not" >> return Not)]
-            , [Infix  (reservedOp gdsl "and" >> return And) AssocLeft]
-            , [Infix  (reservedOp gdsl "or"  >> return Or)  AssocLeft]
-            ]
-    bterm = parens gdsl boolExp
-        <|> (reserved gdsl "true" >> return BTrue)
-        <|> (reserved gdsl "false" >> return BFalse)
-        <|> try (do
-                e1 <- intExp
-                op <- relop
-                e2 <- intExp
-                return (op e1 e2)
-            )
+-----------------------------------
+--- Parser de expressiones booleanas
+------------------------------------
+boolexp :: Parser BoolExp
+boolexp  = chainl1 boolexp2 (try (do reservedOp gdsl "|"
+                                     return Or))
 
-relop :: Parser (IntExp -> IntExp -> BoolExp)
-relop =   (reservedOp gdsl "==" >> return Eq)
-      <|> (reservedOp gdsl "<"  >> return Lt)
-      <|> (reservedOp gdsl ">"  >> return Gt)
+boolexp2 = chainl1 boolexp3 (try (do reservedOp gdsl "&"
+                                     return And))
 
--- Parser para comandos
-comm :: Parser Comm
-comm = do
-  cs <- sepBy1 comm2 (reservedOp gdsl ";")
-  return (foldr1 Seq cs)
+boolexp3 = try (parens gdsl boolexp)
+           <|> try (do reservedOp gdsl "~"
+                       b <- boolexp3
+                       return (Not b))
+           <|> intcomp
+           <|> boolvalue
 
+intcomp = try (do i <- intexp
+                  c <- compopp
+                  j <- intexp
+                  return (c i j))
 
-comm2 :: Parser Comm
-comm2 =  try parseSet 
-     <|> try parseLet
-     <|> try parseLetGraph
-     <|> try parseIf
-     <|> try parseRepeat
-     <|> try parseKruskal
-     <|> try parseEmptyGraph
-     <|> try parseAddEdge
-     <|> try parseSkip
-     <|> parseBlock
+compopp = try (do reservedOp gdsl "="
+                  return Eq)
+          <|> try (do reservedOp gdsl "<"
+                      return Lt)
+          <|> try (do reservedOp gdsl ">"
+                      return Gt)
 
-parseBlock :: Parser Comm
-parseBlock = braces gdsl comm
+boolvalue = try (do reserved gdsl "true"
+                    return BTrue)
+            <|> try (do reserved gdsl "false"
+                        return BFalse)
 
-parseSkip :: Parser Comm
-parseSkip = reserved gdsl "skip" >> return Skip
-
-parseLet :: Parser Comm
-parseLet = do
-    reserved gdsl "let"
-    v <- identifier gdsl
-    reservedOp gdsl "="
-    e <- intExp
-    return (Let v e)
-
-parseLetGraph :: Parser Comm
-parseLetGraph = do
-    reserved gdsl "letgraph"
-    v <- identifier gdsl
-    reservedOp gdsl "="
-    g <- graph
-    return (LetGraph v g)
-
-parseIf :: Parser Comm
-parseIf = do
-    reserved gdsl "if"
-    b <- boolExp
-    reserved gdsl "then"
-    c1 <- comm
-    reserved gdsl "else"
-    c2 <- comm
-    return (Cond b c1 c2)
-
-parseRepeat :: Parser Comm
-parseRepeat = do
-    reserved gdsl "repeat"
-    c <- braces gdsl comm
-    reserved gdsl "until"
-    b <- boolExp
-    return (Repeat c b)
-
-parseKruskal :: Parser Comm
-parseKruskal = do
-    reserved gdsl "kruskal"
-    gvar <- identifier gdsl
-    return (GraphOperation (Kruskal gvar))
-      
-parseComm :: String -> String -> Either ParseError Comm
-parseComm = parse (whiteSpace gdsl >> (parseBlock <|> comm))
-
+-----------------------------------
+-- Parser para grafos
+-----------------------------------
 graph :: Parser Graph
 graph = do
-    pairs <- brackets gdsl (commaSep gdsl nodeAdj)
-    return $ Graph pairs
+  reservedOp gdsl "Graph"
+  nodes <- nodeList
+  return (Graph nodes)
 
-nodeAdj :: Parser (Node, [(Node, Weight)])
-nodeAdj = parens gdsl $ do
-    n <- nodeId
-    comma gdsl
-    adjs <- brackets gdsl (commaSep gdsl edge)
-    return (n, adjs)
+nodeList :: Parser [(Node, [(Node, Weight)])]
+nodeList = do 
+    reservedOp gdsl "["
+    nodes <- nodeEntry `sepBy` (reservedOp gdsl ",")
+    reservedOp gdsl "]"
+    return nodes
 
-edge :: Parser (Node, Weight)
-edge = parens gdsl $ do
-    n <- nodeId
-    comma gdsl
-    w <- float gdsl
-    return (n, w)
+nodeEntry :: Parser (Node, [(Node, Weight)])
+nodeEntry = do
+  reservedOp gdsl "("
+  node <- integer gdsl
+  reservedOp gdsl ","
+  edges <- edgeList
+  reservedOp gdsl ")"
+  return (node, edges)
 
-nodeId :: Parser Node
-nodeId = identifier gdsl <|> stringLiteral gdsl
+edgeList :: Parser [(Node, Weight)]
+edgeList = do
+  reservedOp gdsl "["
+  edges <- edgeEntry `sepBy` (reservedOp gdsl ",")
+  reservedOp gdsl "]"
+  return edges
 
--- Falla con el tema de nombres repetidos
+edgeEntry :: Parser (Node, Weight)
+edgeEntry = do
+  reservedOp gdsl "("
+  destNode <- integer gdsl
+  reservedOp gdsl ","
+  weight <- float gdsl
+  reservedOp gdsl ")"
+  return (destNode, weight)
 
-parseEmptyGraph :: Parser Comm
-parseEmptyGraph = do
-    reserved gdsl "emptygraph"
-    v <- identifier gdsl
-    return (GraphOperation (EmptyGraph v))
 
-parseAddEdge :: Parser Comm
-parseAddEdge = do
-    reserved gdsl "addedge"
-    g <- identifier gdsl
-    n1 <- intExp
-    n2 <- intExp
-    w  <- intExp
-    return (GraphOperation (AddEdge g n1 n2 w))
+-----------------------------------
+--- Parser de comandos
+-----------------------------------
+comm :: Parser Comm
+comm = chainl1 comm2 (try (do reservedOp gdsl ";"
+                              return Seq))
 
-parseSet :: Parser Comm
-parseSet = do
-    reserved gdsl "set"
-    v <- identifier gdsl
-    reservedOp gdsl "="
-    e <- intExp
-    return (Set v e)
+comm2 = try (do reserved gdsl "skip"
+                return Skip)
+        <|> try (do reserved gdsl "if"
+                    cond <- boolexp
+                    reserved gdsl "then"
+                    case1 <- comm
+                    reserved gdsl "else"
+                    case2 <- comm
+                    reserved gdsl "end"
+                    return (Cond cond case1 case2))
+        <|> try (do reserved gdsl "repeat"
+                    c <- comm
+                    reserved gdsl "until"
+                    cond <- boolexp
+                    reserved gdsl "end"
+                    return (Repeat c cond))
+        <|> try (do str <- identifier gdsl
+                    reservedOp gdsl ":="
+                    e <- graph
+                    return (LetGraph str e))
+        <|> try (do str <- identifier gdsl
+                    reservedOp gdsl ":="
+                    e <- intexp
+                    return (Let str e))
+
+
+------------------------------------
+-- Funcion de parseo
+------------------------------------
+parseComm :: SourceName -> String -> Either ParseError Comm
+parseComm = parse (totParser comm) 
