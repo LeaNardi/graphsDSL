@@ -1,7 +1,9 @@
 module ASTGraphs where
 
--- Identificadores de Variable
+-- Alias
 type Variable = String
+type Node = String
+type Weight = IntExp
 
 -- Expresiones Aritmeticas
 data IntExp = Const Integer
@@ -11,7 +13,8 @@ data IntExp = Const Integer
             | Minus IntExp IntExp
             | Times IntExp IntExp
             | Div IntExp IntExp
-            | Question BoolExp IntExp IntExp -- a > 0 ? 1 : 2;
+            | Mod IntExp IntExp
+            | Question BoolExp IntExp IntExp
  deriving (Show,Eq)
 
 -- Expresiones Booleanas
@@ -25,23 +28,23 @@ data BoolExp = BTrue
              | Not BoolExp
  deriving (Show,Eq)
 
-  -- Grafos
-type Node = Integer
-type Weight = Double
-newtype Graph = Graph [(Node, [(Node, Weight)])] deriving (Show,Eq)
+-- Expresiones Grafos
+data GraphExp = EmptyGraph
+            | NewGraph Variable
+            | AddNode GraphExp Node
+            | AddEdge GraphExp Node Node Weight
+            | Kruskal GraphExp
+ deriving (Show,Eq)
 
-
--- Para tratar valores de Int o Graphs
--- data Value = VInt IntExp
---            | VGraph Graph
---            deriving (Show, Eq)
-
--- Comandos (sentencias)
--- Observar que solo se permiten variables de un tipo (entero)
+-- Comandos
 data Comm = Skip
-          | Let Variable IntExp
-          | LetGraph Variable Graph -- Ver de hacer conjuntamente con IntExp
+          | LetIntExp Variable IntExp
+          | LetBoolExp Variable BoolExp
+          | LetGraphExp Variable GraphExp
+          | SetBoolExp Variable BoolExp
+          | SetIntExp Variable IntExp
+          | SetGraphExp Variable GraphExp
           | Seq Comm Comm
           | Cond BoolExp Comm Comm
-          | Repeat Comm BoolExp
+          | Repeat BoolExp Comm
  deriving (Show,Eq)
