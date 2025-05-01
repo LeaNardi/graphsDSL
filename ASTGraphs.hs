@@ -1,13 +1,27 @@
 module ASTGraphs where
 
+
 -- Alias
 type Variable = String
+type Value = Either Integer Graph
+type Ticks = Integer
 type Node = String
-type Weight = IntExp
+type Weight = Integer
+type Edge = (Node, Node)
+type WEdge = (Node, Node, Weight)
+type Graph = [(Node, [(Node, Weight)])]
+type Env = [(Variable, Value)]
+
+
+-- Posibles expresiones de valores para el LetValue
+data ValueExp = IntVal IntExp
+              | GraphVal GraphExp
+ deriving (Show, Eq)
+
 
 -- Expresiones Aritmeticas
 data IntExp = Const Integer
-            | Var Variable
+            | VarInt Variable
             | UMinus IntExp
             | Plus IntExp IntExp
             | Minus IntExp IntExp
@@ -16,6 +30,7 @@ data IntExp = Const Integer
             | Mod IntExp IntExp
             | Question BoolExp IntExp IntExp
  deriving (Show,Eq)
+
 
 -- Expresiones Booleanas
 data BoolExp = BTrue
@@ -28,22 +43,20 @@ data BoolExp = BTrue
              | Not BoolExp
  deriving (Show,Eq)
 
+
 -- Expresiones Grafos
-data GraphExp = EmptyGraph
-            | NewGraph Variable
+data GraphExp = ValuedGraph Graph
+            | VarGraph Variable
             | AddNode GraphExp Node
-            | AddEdge GraphExp Node Node Weight
+            | AddDirectedEdge GraphExp Edge Weight
+            | AddUndirectedEdge GraphExp Edge Weight
             | Kruskal GraphExp
  deriving (Show,Eq)
+ 
 
 -- Comandos
 data Comm = Skip
-          | LetIntExp Variable IntExp
-          | LetBoolExp Variable BoolExp
-          | LetGraphExp Variable GraphExp
-          | SetBoolExp Variable BoolExp
-          | SetIntExp Variable IntExp
-          | SetGraphExp Variable GraphExp
+          | LetValue Variable ValueExp
           | Seq Comm Comm
           | Cond BoolExp Comm Comm
           | Repeat BoolExp Comm
