@@ -1,8 +1,8 @@
 module Main where
 
 import System.Environment (getArgs)
-import Parser (parseComm)
---import Eval (eval)
+import Parser.Parser (parseGraphs)
+import Eval.Eval (eval)
 
 main :: IO ()
 main = do args <- getArgs

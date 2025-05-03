@@ -1,8 +1,8 @@
-module Eval where
+module Eval.Eval where
 
 import ASTGraphs ( Comm, Env, Ticks )
-import StateErrorTick ( StateErrorTick(runStateErrorTick), initState )
-import EvalCore ( evalComm )
+import Eval.StateErrorTick ( StateErrorTick(runStateErrorTick), initState )
+import Eval.Core ( evalComm )
 
 
 eval :: Comm -> (Env, Ticks)

@@ -1,4 +1,4 @@
-module MonadClasses where
+module Eval.MonadClasses where
 
 import ASTGraphs ( Variable, Value, Env )
 

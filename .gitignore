@@ -8,5 +8,3 @@ Main.hi
 Main.o
 Main
 Main.exe
-Eval copy.hs
-Parser copy.hs

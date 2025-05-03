@@ -1,7 +1,7 @@
-module StateErrorTick where
+module Eval.StateErrorTick where
 
 import ASTGraphs ( Env, Ticks, Variable, Value )
-import MonadClasses ( MonadTick(..), MonadError(..), MonadState(..) )
+import Eval.MonadClasses ( MonadTick(..), MonadError(..), MonadState(..) )
 import Control.Monad ( ap )
 
 
