@@ -87,7 +87,7 @@ parseSeqOp = reservedOp gdsl ";" $> Seq
 
 
 parseSimpleComm :: Parser Comm
-parseSimpleComm = parseSkip
+parseSimpleComm = try parseSkip
                <|> try parseCond
                <|> try parseRepeat
                <|> try parseLetValue
@@ -123,7 +123,7 @@ parseLetValue :: Parser Comm
 parseLetValue = do
   var <- identifier gdsl
   reservedOp gdsl ":="
-  parseLetIntVal var <|> parseLetGraphVal var
+  try (parseLetIntVal var) <|> try (parseLetGraphVal var)
 
 
 parseLetIntVal :: Variable -> Parser Comm
@@ -139,7 +139,8 @@ parseGraphExp = try parseKruskal
              <|> try parseAddUndirectedEdge
              <|> try parseAddDirectedEdge
              <|> try parseAddNode
-             <|> parseVarGraph
+             <|> try parseValuedGraph
+             <|> try parseVarGraph
 
 
 parseKruskal :: Parser GraphExp
@@ -180,7 +181,7 @@ parseVarGraph = VarGraph <$> identifier gdsl
 
 parseValuedGraph :: Parser GraphExp
 parseValuedGraph = do
-  reservedOp gdsl "newgraph"
+  reserved gdsl "newgraph"
   ValuedGraph <$> parseNodeList
 
 

@@ -15,3 +15,8 @@ Eval/Eval.hs: la función eval
 Parser/Core.hs: ...
 
 Parser/Parser.hs: ...
+
+
+
+
+ejemplo_kruskal_1.gph -> no es no dirigido, tiene que dar problemas

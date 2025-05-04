@@ -4,31 +4,41 @@ import System.Environment (getArgs)
 import Parser.Parser (parseGraphs)
 import Eval.Eval (eval)
 
-main :: IO ()
-main = do args <- getArgs
-          case args of
-            [fileName] ->  run fileName
-            _          ->  putStrLn "Formato esperado: Main.hs Programas/ejemplo.gph"
 
 -- Para compilar:
 -- ghc Main.hs
--- .\Main Programas/ejemplo.gph
+-- Para ejecutar:
+-- ./Main Programas/ejemplo.gph
 
-run :: [Char] -> IO ()
-run ifile =
-    do
-      s <- readFile ifile
-      case parseComm ifile s of
-        Left error -> print error
-        Right ast    -> print ast        --imprimir sin evaluar (para testear Parser)
-        --Right ast    -> print (eval ast) --imprimir el resultado de evaluar (para testear Eval)
---        Right ast -> let (env, ticks) = eval ast in
---                        case lookup "g" env of
---                          Just (Right gr) -> do
---                                              putStrLn "Grafo resultante (MST):"
---                                              printGraph gr
---                                              putStrLn $ "Ticks: " ++ show ticks
---                          _ -> print env
+-- Para ejecutar sin compilar:
+-- runghc Main.hs Programas/ejemplo.gph
+
+main :: IO ()
+main = do args <- getArgs
+          case args of
+            [fileName] -> do source <- readFile fileName
+                             case parseGraphs fileName source of
+                                Left err  -> putStrLn "Error de parseo:" >> print err
+                                Right ast -> do
+                                    putStrLn "AST parseado:"
+                                    print ast
+                                    putStrLn "\nResultado de la evaluación:"
+                                    print (eval ast)
+            _          ->  putStrLn "Formato esperado: Main.hs Programas/ejemplo.gph"
+
+
+
+-- Imprimir el resultado de forma más legible por pantalla
+--run :: [Char] -> IO ()
+--run ifile = do s <- readFile ifile
+--               case parseGraphs ifile s of
+--                 Left error -> print error
+--                 Right ast -> let (env, ticks) = eval ast in
+--                   case lookup "g" env of
+--                      Just (Right gr) -> do putStrLn "Grafo resultante (MST):"
+--                                            printGraph gr
+--                                            putStrLn $ "Ticks: " ++ show ticks
+--                      _ -> print env
 
 --printGraph :: Graph -> IO ()
 --printGraph (Graph adj) = mapM_ printAdj adj
@@ -36,3 +46,9 @@ run ifile =
 --    printAdj (n, edges) = do
 --        putStr (show n ++ " -> ")
 --        putStrLn (show edges)
+
+
+-- Hacer tests del AST...
+-- Skip
+-- Output
+

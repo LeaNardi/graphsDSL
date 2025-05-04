@@ -56,8 +56,8 @@ data GraphExp = ValuedGraph Graph
 
 -- Comandos
 data Comm = Skip
-          | LetValue Variable ValueExp
           | Seq Comm Comm
+          | LetValue Variable ValueExp
           | Cond BoolExp Comm Comm
           | Repeat BoolExp Comm
  deriving (Show,Eq)
