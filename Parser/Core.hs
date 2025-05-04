@@ -3,7 +3,7 @@ module Parser.Core where
 import Text.ParserCombinators.Parsec ( chainl1, sepBy, (<|>), try, Parser )
 import Text.Parsec.Token ( GenTokenParser( integer, reserved, identifier, brackets, parens, stringLiteral, reservedOp) )
 import Data.Functor (($>))
-import Debug.Trace (trace)
+import Debug.Trace (trace, traceShow)
 
 import Parser.Lexer ( gdsl )
 import ASTGraphs ( BoolExp(..), Comm(..), GraphExp(..), IntExp(..), Node, ValueExp(GraphVal, IntVal), Variable, Weight )
@@ -124,7 +124,7 @@ parseLetValue :: Parser Comm
 parseLetValue = do
   var <- identifier gdsl
   reservedOp gdsl ":="
-  try (parseLetIntVal var) <|> try (parseLetGraphVal var)
+  try (parseLetGraphVal var) <|> try (parseLetIntVal var)
 
 
 parseLetIntVal :: Variable -> Parser Comm
@@ -136,12 +136,12 @@ parseLetGraphVal var = LetValue var . GraphVal <$> parseGraphExp
 
 
 parseGraphExp :: Parser GraphExp
-parseGraphExp = try parseKruskal
+parseGraphExp = try parseValuedGraph
+             <|> try parseVarGraph
+             <|> try parseKruskal
              <|> try parseAddUndirectedEdge
              <|> try parseAddDirectedEdge
              <|> try parseAddNode
-             <|> try parseValuedGraph
-             <|> try parseVarGraph
 
 
 parseKruskal :: Parser GraphExp
