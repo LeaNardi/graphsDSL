@@ -1,0 +1,11 @@
+ASTGraphs.hi
+ASTGraphs.o
+ParserTests.hi
+parser-tests
+ParserTests.o
+Parser/Core.hi
+Parser/Core.o
+Parser/Lexer.hi
+Parser/Lexer.o
+Parser/Parser.hi
+Parser/Parser.o

@@ -17,11 +17,11 @@ parseMulExp = chainl1 parseAtomIntExp parseMulOp
 
 
 parseAtomIntExp :: Parser IntExp
-parseAtomIntExp = parseQuestion
-               <|> parens gdsl parseIntExp
+parseAtomIntExp = parens gdsl parseIntExp
                <|> try (UMinus <$> (reservedOp gdsl "-" *> parseAtomIntExp))
-               <|> Const <$> integer gdsl
-               <|> VarInt <$> identifier gdsl
+               <|> try (Const <$> integer gdsl)
+               <|> try (VarInt <$> identifier gdsl)
+               <|> try parseQuestion
 
 
 parseAddOp :: Parser (IntExp -> IntExp -> IntExp)
