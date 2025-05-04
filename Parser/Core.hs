@@ -3,6 +3,7 @@ module Parser.Core where
 import Text.ParserCombinators.Parsec ( chainl1, sepBy, (<|>), try, Parser )
 import Text.Parsec.Token ( GenTokenParser( integer, reserved, identifier, brackets, parens, stringLiteral, reservedOp) )
 import Data.Functor (($>))
+import Debug.Trace (trace)
 
 import Parser.Lexer ( gdsl )
 import ASTGraphs ( BoolExp(..), Comm(..), GraphExp(..), IntExp(..), Node, ValueExp(GraphVal, IntVal), Variable, Weight )
@@ -55,9 +56,9 @@ parseAndExp = chainl1 parseAtomBoolExp parseAndOp
 parseAtomBoolExp :: Parser BoolExp
 parseAtomBoolExp = parens gdsl parseBoolExp
                 <|> try (Not <$> (reservedOp gdsl "~" *> parseAtomBoolExp))
-                <|> parseComparisonIntExp
-                <|> (reserved gdsl "true"  $> BTrue)
-                <|> (reserved gdsl "false" $> BFalse)
+                <|> try (reserved gdsl "true"  $> BTrue)
+                <|> try (reserved gdsl "false" $> BFalse)
+                <|> try parseComparisonIntExp
 
 
 parseOrOp :: Parser (BoolExp -> BoolExp -> BoolExp)
