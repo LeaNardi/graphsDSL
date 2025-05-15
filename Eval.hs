@@ -1,6 +1,6 @@
 module Eval (eval) where -- antiguo eval4
 
-import AST
+import ASTGraphs
 import Control.Applicative (Applicative(..))
 import Control.Monad       (liftM, ap)  
 
