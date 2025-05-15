@@ -17,8 +17,8 @@ addDirectedEdge u v w ((node, nodesWeights) : otros)
   | otherwise = (node, nodesWeights) : addDirectedEdge u v w otros
 
 
-addUndirectedEdge :: Node -> Node -> Weight -> Graph -> Graph
-addUndirectedEdge u v w g = addDirectedEdge v u w (addDirectedEdge u v w g)
+addEdge :: Node -> Node -> Weight -> Graph -> Graph
+addEdge u v w g = addDirectedEdge v u w (addDirectedEdge u v w g)
 
 
 isUndirected :: Graph -> Bool
@@ -59,4 +59,4 @@ union u v edges = (find u edges, find v edges) : edges
 
 
 wEdgesToGraph :: [WEdge] -> Graph
-wEdgesToGraph = foldr (\(u, v, w) -> addUndirectedEdge u v w) []
+wEdgesToGraph = foldr (\(u, v, w) -> addEdge u v w) []

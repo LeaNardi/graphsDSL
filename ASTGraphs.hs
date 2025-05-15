@@ -44,15 +44,23 @@ data BoolExp = BTrue
  deriving (Show,Eq)
 
 
--- Expresiones Grafos
+-- Expresiones Grafos No Dirigidos
 data GraphExp = ValuedGraph Graph
             | VarGraph Variable
             | AddNode GraphExp Node
-            | AddDirectedEdge GraphExp Edge Weight
-            | AddUndirectedEdge GraphExp Edge Weight
-            | Kruskal GraphExp
+            | DeleteNode GraphExp Node
+            | AddEdge GraphExp Edge Weight
+            | DeleteEdge GraphExp Edge Weight
+            | GraphComplement GraphExp
+            | GraphUnion GraphExp GraphExp
+            | GraphIntersection GraphExp GraphExp
+            -- | Kruskal GraphExp
  deriving (Show,Eq)
- 
+
+
+-- Expresiones Grafos Dirigidos
+-- data DirGraphExp = ValuedDirGraph DirGraph
+
 
 -- Comandos
 data Comm = Skip

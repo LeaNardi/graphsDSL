@@ -2,7 +2,7 @@ module Eval.Core ( evalComm ) where
 
 import ASTGraphs ( Comm(..), BoolExp(..), IntExp(..), GraphExp(..), ValueExp(..), Value, Ticks, Env, Graph, Edge )
 import Eval.MonadClasses ( MonadError(..), MonadState(lookfor, update), MonadTick(..) )
-import Utils ( addNode, addDirectedEdge, addUndirectedEdge, kruskal, isUndirected )
+import Utils ( addNode, addEdge, kruskal, isUndirected )
 import Control.Monad ( when )
 
 
@@ -89,17 +89,17 @@ evalGraphExp (VarGraph v) = do val <- lookfor v
                                  Left _  -> throw
 evalGraphExp (AddNode g n) = do gval <- evalGraphExp g
                                 return (addNode n gval)
-evalGraphExp (AddDirectedEdge g (u, v) w) = do gval <- evalGraphExp g
-                                               let nodes = map fst gval
-                                               if u `elem` nodes && v `elem` nodes
-                                                 then return (addDirectedEdge u v w gval)
-                                                 else throw
-evalGraphExp (AddUndirectedEdge g (u, v) w) = do gval <- evalGraphExp g
-                                                 let nodes = map fst gval
-                                                 if u `elem` nodes && v `elem` nodes
-                                                   then return (addUndirectedEdge u v w gval)
-                                                   else throw
-evalGraphExp (Kruskal g) = do gval <- evalGraphExp g
-                              if isUndirected gval
-                                then return (kruskal gval)
-                                else throw
+-- evalGraphExp (AddDirectedEdge g (u, v) w) = do gval <- evalGraphExp g
+--                                                let nodes = map fst gval
+--                                                if u `elem` nodes && v `elem` nodes
+--                                                  then return (addDirectedEdge u v w gval)
+--                                                  else throw
+evalGraphExp (AddEdge g (u, v) w) = do  gval <- evalGraphExp g
+                                        let nodes = map fst gval
+                                        if u `elem` nodes && v `elem` nodes
+                                            then return (addEdge u v w gval)
+                                            else throw
+-- evalGraphExp (Kruskal g) = do gval <- evalGraphExp g
+--                               if isUndirected gval
+--                                 then return (kruskal gval)
+--                                 else throw

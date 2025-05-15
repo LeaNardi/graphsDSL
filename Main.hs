@@ -8,10 +8,10 @@ import Eval.Eval (eval)
 -- Para compilar:
 -- ghc Main.hs
 -- Para ejecutar:
--- ./Main Programas/ejemplo.gph
+-- ./Main Tests/Programas/ejemplo_1.gph
 
 -- Para ejecutar sin compilar:
--- runghc Main.hs Programas/ejemplo.gph
+-- runghc Main.hs Tests/Programas/ejemplo_1.gph
 
 main :: IO ()
 main = do args <- getArgs
@@ -23,7 +23,7 @@ main = do args <- getArgs
                                     putStrLn "AST parseado:"
                                     print ast
                                     putStrLn "\nResultado de la evaluación:"
-                                    print (eval ast)
+                                    -- print (eval ast)
             _          ->  putStrLn "Formato esperado: Main.hs Programas/ejemplo.gph"
 
 

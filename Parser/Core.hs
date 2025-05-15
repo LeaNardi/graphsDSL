@@ -138,14 +138,14 @@ parseLetGraphVal var = LetValue var . GraphVal <$> parseGraphExp
 parseGraphExp :: Parser GraphExp
 parseGraphExp = try parseValuedGraph
              <|> try parseVarGraph
-             <|> try parseKruskal
-             <|> try parseAddUndirectedEdge
-             <|> try parseAddDirectedEdge
+            --  <|> try parseKruskal
+             <|> try parseAddEdge
+            --  <|> try parseAddDirectedEdge
              <|> try parseAddNode
 
 
-parseKruskal :: Parser GraphExp
-parseKruskal = Kruskal <$> (reserved gdsl "kruskal" *> parseGraphExp)
+-- parseKruskal :: Parser GraphExp
+-- parseKruskal = Kruskal <$> (reserved gdsl "kruskal" *> parseGraphExp)
 
 
 parseAddNode :: Parser GraphExp
@@ -156,24 +156,24 @@ parseAddNode = do
   return (AddNode g n)
 
 
-parseAddDirectedEdge :: Parser GraphExp
-parseAddDirectedEdge = do
+-- parseAddDirectedEdge :: Parser GraphExp
+-- parseAddDirectedEdge = do
+--   reserved gdsl "addedge"
+--   g <- parseGraphExp
+--   n1 <- stringLiteral gdsl
+--   n2 <- stringLiteral gdsl
+--   w <- integer gdsl
+--   return (AddDirectedEdge g (n1, n2) w)
+
+
+parseAddEdge :: Parser GraphExp
+parseAddEdge = do
   reserved gdsl "addedge"
   g <- parseGraphExp
   n1 <- stringLiteral gdsl
   n2 <- stringLiteral gdsl
   w <- integer gdsl
-  return (AddDirectedEdge g (n1, n2) w)
-
-
-parseAddUndirectedEdge :: Parser GraphExp
-parseAddUndirectedEdge = do
-  reserved gdsl "adduedge"
-  g <- parseGraphExp
-  n1 <- stringLiteral gdsl
-  n2 <- stringLiteral gdsl
-  w <- integer gdsl
-  return (AddUndirectedEdge g (n1, n2) w)
+  return (AddEdge g (n1, n2) w)
 
 
 parseVarGraph :: Parser GraphExp
