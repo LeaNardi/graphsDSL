@@ -4,6 +4,7 @@ import ASTGraphs ( Comm(..), BoolExp(..), IntExp(..), GraphExp(..), ValueExp(..)
 import Eval.MonadClasses ( MonadError(..), MonadState(lookfor, update), MonadTick(..) )
 import Utils ( addNode, addEdge, kruskal, isUndirected )
 import Control.Monad ( when )
+import Data.List (intersect)
 
 
 evalComm :: (MonadState m, MonadError m, MonadTick m) => Comm -> m ()
@@ -99,6 +100,31 @@ evalGraphExp (AddEdge g (u, v) w) = do  gval <- evalGraphExp g
                                         if u `elem` nodes && v `elem` nodes
                                             then return (addEdge u v w gval)
                                             else throw
+evalGraphExp (GraphIntersection g1 g2) = do
+  
+  gval1 <- evalGraphExp g1
+  gval2 <- evalGraphExp g2
+
+  let nodes1 = map fst gval1
+      nodes2 = map fst gval2
+      nodes = nodes1 `intersect` nodes2
+
+      getEdges g = [ (u, v, w) | (u, vw) <- g, (v, w) <- vw ]
+      edges1 = getEdges gval1
+      edges2 = getEdges gval2
+
+      edges = [ (u, v, w) 
+              | (u, v, w) <- edges1
+              , (u', v', w') <- edges2
+              , w == w'
+              , (u == u' && v == v') || (u == v' && v == u')
+              ]
+
+      finalGraphWithOnlyNodes = foldr addNode [] nodes
+      finalGraph = foldr (\(u, v, w) g -> addEdge u v w g) finalGraphWithOnlyNodes edges
+
+  return finalGraph
+
 -- evalGraphExp (Kruskal g) = do gval <- evalGraphExp g
 --                               if isUndirected gval
 --                                 then return (kruskal gval)

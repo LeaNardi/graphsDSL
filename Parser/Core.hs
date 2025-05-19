@@ -142,7 +142,17 @@ parseGraphExp = try parseValuedGraph
              <|> try parseAddEdge
             --  <|> try parseAddDirectedEdge
              <|> try parseAddNode
+             <|> try parseGraphIntersection
 
+
+parseGraphIntersection :: Parser GraphExp
+parseGraphIntersection = do
+  reserved gdsl "intersect"
+  firstGraph <- parseGraphExp
+  reserved gdsl "with"
+  secondGraph <- parseGraphExp
+  reserved gdsl "end"
+  return (GraphIntersection firstGraph secondGraph)
 
 -- parseKruskal :: Parser GraphExp
 -- parseKruskal = Kruskal <$> (reserved gdsl "kruskal" *> parseGraphExp)
