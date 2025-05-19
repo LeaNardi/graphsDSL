@@ -23,5 +23,18 @@ tests = testGroup "Parser DSL Tests"
       parseGraphs "test" "cond true then x := 1 else x := 2 end" @?=
       Right (Cond BTrue
                 (LetValue "x" (IntVal (Const 1)))
-                (LetValue "x" (IntVal (Const 2))))
+                (LetValue "x" (IntVal (Const 2)))),
+    
+    testCase "let con intersección de grafos" $
+      parseGraphs "test" "x := intersect newgraph [(\"a\", [(\"b\", 1)]), (\"b\", [])] with newgraph [(\"b\", [(\"a\", 1)]), (\"a\", [])] end" @?= 
+      Right (LetValue "x" (GraphVal (GraphIntersection 
+                                      (ValuedGraph [("a", [("b", 1)]), ("b", [])])
+                                      (ValuedGraph [("b", [("a", 1)]), ("a", [])])
+                                    )))
+
+  -- Observaciones: 
+  -- Debería ser más claro cómo especificar un grafo unívocamente (acá "b" tiene una arista que va a "a")
+  -- Quería hacer directamente "intersection newgraph [(\"a\", [(\"b\", 1)]), (\"b\", [])] with newgraph [(\"b\", [(\"a\", 1)]), (\"a\", [])] end"
+  -- Cómo resolver que [("a", [("b", 1)] y [("b", [("a", 1)] son la misma arista a nivel del eval
+
   ]

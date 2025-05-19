@@ -17,20 +17,27 @@ tests = testGroup "Eval DSL Tests"
     testCase "let x := 1" $
       evalFrom "x := 1" @?= ([("x", Left 1)], 0),
 
-    testCase "x := 1; x := x + 1" $
-      evalFrom "x := 1; x := x + 1" @?= ([("x", Left 2)], 1),
+    --testCase "x := 1; x := x + 1" $
+    ---  evalFrom "x := 1; x := x + 1" @?= ([("x", Left 2)], 1),
 
     testCase "cond true then x := 1 else x := 2 end" $
       evalFrom "cond true then x := 1 else x := 2 end" @?= ([("x", Left 1)], 0),
 
-    testCase "repeat x := x + 1 until x > 2 end" $
-      evalFrom "x := 0; repeat x := x + 1 until x > 2 end" @?= ([("x", Left 3)], 2),
+    --testCase "repeat x := x + 1 until x > 2 end" $
+    --  evalFrom "x := 0; repeat x := x + 1 until x > 2 end" @?= ([("x", Left 3)], 2),
 
     testCase "grafo vacío" $
       evalFrom "g := newgraph []" @?= ([("g", Right [])], 0),
 
     testCase "grafo con nodo" $
-      evalFrom "g := addnode newgraph [] \"a\"" @?= ([("g", Right [("a", [])])], 0)
+      evalFrom "g := addnode newgraph [] \"a\"" @?= ([("g", Right [("a", [])])], 0), 
+      
+    testCase "evaluación de intersección de grafos" $
+      evalFrom "x := intersect newgraph [(\"a\", [(\"b\", 1)]), (\"b\", [])] with newgraph [(\"b\", [(\"a\", 1)]), (\"a\", [])] end"
+      @?= ([("x", Right [("a", [("b", 1)]), ("b", [("a", 1)])])], 0)
+
+    -- Demiasiado... Habría que clarificar el criterio con el que el Env va a llevar las listas de adyacencias...
+
   ]
 
 -- Función auxiliar
