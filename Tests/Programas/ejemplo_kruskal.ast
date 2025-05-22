@@ -1,0 +1,60 @@
+Seq
+  (LetValue "g" (GraphVal (ValuedGraph
+                          [ (Node "A", [(Node "B",7), (Node "D",5)])
+                          , (Node "B", [(Node "C",8), (Node "D",9), (Node "E",7)])
+                          , (Node "C", [(Node "E",5)])
+                          , (Node "D", [(Node "E",15), (Node "F",6)])
+                          , (Node "E", [(Node "F",8), (Node "G",9)])
+                          , (Node "F", [(Node "G",11)])
+                          ])))
+  (Seq
+    (LetValue "uf" (UnionFindVal (ValuedUnionFind
+                    [ (Node "A", Node "A"), (Node "B", Node "B"), (Node "C", Node "C")
+                    , (Node "D", Node "D"), (Node "E", Node "E"), (Node "F", Node "F"), (Node "G", Node "G") ])))
+    (Seq
+      (LetValue "edges" (ListEdgeVal (SortByWeight (GetEdges (VarGraph "g")))))
+      (Seq
+        (LetValue "mst" (GraphVal (ValuedGraph [])))
+        (Seq
+          (LetValue "pending" (VarList "edges"))
+          (Repeat
+            (Not (Eq (Len (VarList "pending")) (Const 0)))
+            (Seq
+              (LetValue "edge" (Head (VarList "pending")))
+              (Seq
+                (LetValue "pending" (Tail (VarList "pending")))
+                (Seq
+                  (LetValue "u" (GetNode1 (VarEdge "edge")))
+                  (Seq
+                    (LetValue "v" (GetNode2 (VarEdge "edge")))
+                    (Seq
+                      (LetValue "w" (GetWeight (VarEdge "edge")))
+                      (Seq
+                        (LetValue "rep_u" (Find (VarNode "u") (VarUnionFind "uf")))
+                        (Seq
+                          (LetValue "rep_v" (Find (VarNode "v") (VarUnionFind "uf")))
+                          (Cond
+                            (Not (EqNode (VarNode "rep_u") (VarNode "rep_v")))
+                            (Seq
+                              (LetValue "mst"
+                                (GraphVal (AddEdge
+                                  (VarGraph "mst")
+                                  (ValuedEdge (VarNode "u", VarNode "v", VarInt "w")))
+                                )
+                              )
+                              (LetValue "uf" (UnionFindVal (Union (VarNode "u") (VarNode "v") (VarUnionFind "uf"))))
+                            )
+                            Skip
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+  )

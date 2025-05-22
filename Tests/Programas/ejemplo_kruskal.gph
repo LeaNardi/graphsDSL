@@ -1,0 +1,36 @@
+g := newgraph [
+  ("A", [("B", 7), ("D", 5)]),
+  ("B", [("C", 8), ("D", 9), ("E", 7)]),
+  ("C", [("E", 5)]),
+  ("D", [("E", 15), ("F", 6)]),
+  ("E", [("F", 8), ("G", 9)]),
+  ("F", [("G", 11)])
+];
+
+uf := newunionfind [
+  ("A", "A"), ("B", "B"), ("C", "C"),
+  ("D", "D"), ("E", "E"), ("F", "F"), ("G", "G")
+];
+
+edges := sort_by_weight get_edges g;
+mst := newgraph [];
+pending := edges;
+
+repeat
+  edge := head pending;
+  pending := tail pending;
+
+  u := node1 edge;
+  v := node2 edge;
+  w := weight edge;
+
+  rep_u := find u uf;
+  rep_v := find v uf;
+
+  cond ~(rep_u = rep_v) then
+    mst := addedge (u, v, w) mst;
+    uf := union u v uf
+  else
+    skip
+  end
+until ~(len pending = 0) end
