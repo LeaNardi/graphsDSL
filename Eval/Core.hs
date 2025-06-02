@@ -129,3 +129,11 @@ evalGraphExp (GraphIntersection g1 g2) = do
 --                               if isUndirected gval
 --                                 then return (kruskal gval)
 --                                 else throw
+
+evalGraphExp (GraphComplement g ) = do
+  
+  gval <- evalGraphExp g
+
+  let nodes = map fst gval
+
+  return finalGraph

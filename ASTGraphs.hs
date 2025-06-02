@@ -53,7 +53,7 @@ data GraphExp = ValuedGraph Graph
             | DeleteNode GraphExp Node
             | AddEdge GraphExp Edge Weight
             | DeleteEdge GraphExp Edge Weight
-            | GraphComplement GraphExp
+            | GraphComplement GraphExp -- Juli
             | GraphUnion GraphExp GraphExp
             | GraphIntersection GraphExp GraphExp
             -- | Kruskal GraphExp
