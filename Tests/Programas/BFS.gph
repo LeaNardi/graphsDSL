@@ -6,16 +6,19 @@ g := newgraph [
     ("5", [("2",33), ("4",44)] )
 ];
 
-NodosVisitados := newlista()
-Q := newcola()
+NodosVisitados := newList()
+Q := newQueue()
 
-Q := encolar Q "1"
-NodosVisitados := addLista NodosVisitados "1"
+Q:= enqueue Q "1"
+NodosVisitados := addList NodosVisitados "1"
 
-while not (IsEmptyCola Q)
-    nodo := desencolar Q
-
-    for c in (conexion nodo)
-        if not (InList NodosVisitados c) then
-            Q := encolar Q c
-            NodosVisitados := addLista NodosVisitados c
+while not (isEmptyCola Q) do
+	node := dequeue Q
+	
+	for neighbor in (adjacentNodes nodo) do
+		if not (InList NodosVisitados neighbor) then
+			Q:= encolar Q neighbor
+			NodosVisitados:= addList NodosVisitados neighbor
+        end if
+    end for
+end while
