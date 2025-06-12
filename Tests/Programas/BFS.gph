@@ -2,20 +2,20 @@ g := newgraph [
     ("1", [("2",22), ("3",55)] ),
     ("2", [("1",22), ("5",33)] ),
     ("3", [("1",55), ("4",11)] ),
-    ("4", [("3",11), ("5",44)] )
+    ("4", [("3",11), ("5",44)] ),
     ("5", [("2",33), ("4",44)] )
-    ];
+];
 
 NodosVisitados := newlista()
 Q := newcola()
 
-Q:= encolar Q “1”
-NodosVisitados := addLista NodosVisitados “1”
+Q := encolar Q "1"
+NodosVisitados := addLista NodosVisitados "1"
 
-while not (IsEmptyList NodosVisitados)
-	nodo = desencolar Q
-	
-	for c in (conexion nodo)
-		if (InList NodosVisitados nodo := False) then
-			Q:= encolar Q c
-			NodosVisitados:= addLista NodosVisitados c
+while not (IsEmptyCola Q)
+    nodo := desencolar Q
+
+    for c in (conexion nodo)
+        if not (InList NodosVisitados c) then
+            Q := encolar Q c
+            NodosVisitados := addLista NodosVisitados c
