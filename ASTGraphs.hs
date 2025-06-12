@@ -33,6 +33,8 @@ data BoolExp = BTrue
              | Or BoolExp BoolExp
              | Not BoolExp
              | EqNode NodeExp NodeExp
+             | esCiclico GraphExp
+             | esConexo GraphExp
  deriving (Show,Eq)
 
 
