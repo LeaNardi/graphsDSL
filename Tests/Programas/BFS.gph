@@ -12,13 +12,17 @@ Q := newQueue()
 Q:= enqueue Q "1"
 NodosVisitados := addList NodosVisitados "1"
 
-while not (isEmptyCola Q) do
+repeat
 	node := dequeue Q
 	
 	for neighbor in (adjacentNodes nodo) do
-		if not (InList NodosVisitados neighbor) then
-			Q:= encolar Q neighbor
+		if ~(inList NodosVisitados neighbor) then
+			Q:= enqueue Q neighbor
 			NodosVisitados:= addList NodosVisitados neighbor
-        end if
-    end for
-end while
+        else
+            skip
+        end
+    end
+until 
+    ~(isEmptyCola Q) 
+end
