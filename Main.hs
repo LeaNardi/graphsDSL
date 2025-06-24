@@ -2,7 +2,7 @@ module Main where
 
 import System.Environment (getArgs)
 import Parser.Parser (parseGraphs)
-import Eval.Eval (eval)
+-- import Eval.Eval (eval)
 
 
 -- Para compilar:

@@ -5,7 +5,8 @@ module ASTGraphs where
 type Variable = String
 type Env = [(Variable, Value)]
 type Ticks = Integer
-type Value = Either Integer Graph
+type Value = Either Integer GraphExp
+type Weight = Integer
 
 
 -- Expresiones Aritmeticas
@@ -33,8 +34,8 @@ data BoolExp = BTrue
              | Or BoolExp BoolExp
              | Not BoolExp
              | EqNode NodeExp NodeExp
-             | esCiclico GraphExp
-             | esConexo GraphExp
+             | EsCiclico GraphExp
+             | EsConexo GraphExp
  deriving (Show,Eq)
 
 
