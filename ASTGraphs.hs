@@ -1,13 +1,29 @@
 module ASTGraphs where
 
-
 -- Alias
 type Variable = String
 type Env = [(Variable, Value)]
 type Ticks = Integer
-type Value = Either Integer GraphExp
 type Weight = Integer
 
+-- type Value = Either Integer GraphExp
+-- Nueva estructura para type Value
+data Value = IntValue Integer
+           | GraphValue Graph
+           | EdgeValue Edge
+           | NodeValue Node
+           | ListEdgeValue [Edge]
+           | UnionFindValue UnionFind
+           | QueueValue Queue
+           | ListValue [Node]
+ deriving (Show, Eq)
+
+-- Core data types for runtime values
+data Graph = Graph [(Node, [(Node, Weight)])] deriving (Show, Eq)
+data Edge = Edge Node Node Weight deriving (Show, Eq)
+data Node = Node String deriving (Show, Eq, Ord)
+data UnionFind = UnionFind [(Node, Node)] deriving (Show, Eq)
+data Queue = Queue [Node] deriving (Show, Eq)
 
 -- Expresiones Aritmeticas
 data IntExp = Const Integer
@@ -21,8 +37,8 @@ data IntExp = Const Integer
             | Question BoolExp IntExp IntExp
             | GetWeight EdgeExp
             | Len ListEdgeExp
- deriving (Show,Eq)
-
+            | QueueLen QueueExp
+ deriving (Show, Eq)
 
 -- Expresiones Booleanas
 data BoolExp = BTrue
@@ -36,20 +52,22 @@ data BoolExp = BTrue
              | EqNode NodeExp NodeExp
              | EsCiclico GraphExp
              | EsConexo GraphExp
- deriving (Show,Eq)
-
+             | InList ListExp NodeExp
+             | IsEmptyQueue QueueExp
+             | IsEmptyList ListExp
+ deriving (Show, Eq)
 
 -- Expresiones Grafos No Dirigidos
 data GraphExp = ValuedGraph [(NodeExp, [(NodeExp, IntExp)])]
-            | VarGraph Variable
-            | AddNode GraphExp NodeExp
-            | DeleteNode GraphExp NodeExp
-            | AddEdge GraphExp EdgeExp
-            | DeleteEdge GraphExp EdgeExp
-            | GraphComplement GraphExp
-            | GraphUnion GraphExp GraphExp
-            | GraphIntersection GraphExp GraphExp
- deriving (Show,Eq)
+              | VarGraph Variable
+              | AddNode GraphExp NodeExp
+              | DeleteNode GraphExp NodeExp
+              | AddEdge GraphExp EdgeExp
+              | DeleteEdge GraphExp EdgeExp
+              | GraphComplement GraphExp
+              | GraphUnion GraphExp GraphExp
+              | GraphIntersection GraphExp GraphExp
+ deriving (Show, Eq)
 
 
 -- Comandos
@@ -57,9 +75,10 @@ data Comm = Skip
           | Seq Comm Comm
           | LetValue Variable ValueExp
           | Cond BoolExp Comm Comm
-          | Repeat BoolExp Comm
- deriving (Show,Eq)
-
+          | While BoolExp Comm -- Ver el Repeat desarrollado previamente
+          | For Variable ListExp Comm
+          | Print ValueExp
+ deriving (Show, Eq)
 
 data ValueExp = IntVal IntExp
               | GraphVal GraphExp
@@ -67,32 +86,50 @@ data ValueExp = IntVal IntExp
               | NodeVal NodeExp
               | ListEdgeVal ListEdgeExp
               | UnionFindVal UnionFindExp
- deriving (Show,Eq)
+              | QueueVal QueueExp
+              | ListVal ListExp
+ deriving (Show, Eq)
 
-
-data ListEdgeExp = EmptyList
-                 | VarList Variable
+-- Operaciones de Lista de Edges
+data ListEdgeExp = EmptyEdgeList
+                 | VarEdgeList Variable
                  | GetEdges GraphExp
                  | SortByWeight ListEdgeExp
-                 | Tail ListEdgeExp
- deriving (Show,Eq)
+                 | TailEdges ListEdgeExp
+ deriving (Show, Eq)
 
+-- New list type for nodes
+data ListExp = EmptyList
+             | VarList Variable
+             | NewList
+             | AddList ListExp NodeExp
+             | TailList ListExp
+             | AdjacentNodes GraphExp NodeExp
+ deriving (Show, Eq)
+
+-- Enhanced queue operations
+data QueueExp = EmptyQueue
+              | VarQueue Variable
+              | NewQueue
+              | Enqueue QueueExp NodeExp
+              | Dequeue QueueExp
+ deriving (Show, Eq)
 
 data EdgeExp = ValuedEdge (NodeExp, NodeExp, IntExp)
              | VarEdge Variable
-             | Head ListEdgeExp
- deriving (Show,Eq)
+             | HeadEdge ListEdgeExp
+ deriving (Show, Eq)
 
-
-data NodeExp = Node String
+data NodeExp = NodeLit String
              | VarNode Variable
              | GetNode1 EdgeExp
              | GetNode2 EdgeExp
              | Find NodeExp UnionFindExp
- deriving (Show,Eq)
-
+             | HeadList ListExp
+             | DequeueNode QueueExp
+ deriving (Show, Eq)
 
 data UnionFindExp = ValuedUnionFind [(NodeExp, NodeExp)]
                   | VarUnionFind Variable
                   | Union NodeExp NodeExp UnionFindExp
- deriving (Show,Eq)
+ deriving (Show, Eq)
