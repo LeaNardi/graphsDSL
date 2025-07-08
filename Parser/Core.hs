@@ -6,7 +6,7 @@ import Data.Functor (($>))
 import Debug.Trace (trace, traceShow)
 
 import Parser.Lexer ( gdsl )
-import ASTGraphs ( BoolExp(..), Comm(..), GraphExp(..), EdgeExp(..), IntExp(..), NodeExp(..), ValueExp(GraphVal, IntVal), Variable, Weight )
+import ASTGraphs ( BoolExp(..), Comm(..), GraphExp(..), EdgeExp(..), IntExp(..), NodeExp(..), ValueExp(..), Variable, Weight )
 
 
 parseIntExp :: Parser IntExp
@@ -90,7 +90,9 @@ parseSeqOp = reservedOp gdsl ";" $> Seq
 parseSimpleComm :: Parser Comm
 parseSimpleComm = try parseSkip
                <|> try parseCond
-               <|> try parseRepeat
+               <|> try parseWhile
+               <|> try parseFor
+               <|> try parsePrint
                <|> try parseLetValue
 
 
@@ -110,14 +112,33 @@ parseCond = do
   return (Cond cond trueBranch falseBranch)
 
 
-parseRepeat :: Parser Comm
-parseRepeat = do
-  reserved gdsl "repeat"
-  body <- parseComm
-  reserved gdsl "until"
+parseWhile :: Parser Comm
+parseWhile = do
+  reserved gdsl "while"
   cond <- parseBoolExp
+  reserved gdsl "do"
+  body <- parseComm
   reserved gdsl "end"
-  return (Repeat cond body)
+  return (While cond body)
+
+
+parseFor :: Parser Comm
+parseFor = do
+  reserved gdsl "for"
+  var <- identifier gdsl
+  reserved gdsl "in"
+  list <- parseListExp
+  reserved gdsl "do"
+  body <- parseComm
+  reserved gdsl "end"
+  return (For var list body)
+
+
+parsePrint :: Parser Comm
+parsePrint = do
+  reserved gdsl "print"
+  expr <- parseValueExp
+  return (Print expr)
 
 
 parseLetValue :: Parser Comm
@@ -170,7 +191,7 @@ parseAddNode = do
   reserved gdsl "addnode"
   g <- parseGraphExp
   n <- stringLiteral gdsl
-  return (AddNode g (Node n))
+  return (AddNode g (NodeLit n))
 
 
 -- parseAddDirectedEdge :: Parser GraphExp
@@ -190,7 +211,7 @@ parseAddEdge = do
   n1 <- stringLiteral gdsl
   n2 <- stringLiteral gdsl
   w <- integer gdsl
-  let edge = ValuedEdge (Node n1, Node n2, Const w)
+  let edge = ValuedEdge (NodeLit n1, NodeLit n2, Const w)
   return (AddEdge g edge)
 
 
@@ -213,7 +234,7 @@ parseNodeEntry = parens gdsl (do
                                 node <- stringLiteral gdsl
                                 reservedOp gdsl ","
                                 edges <- parseEdgeList
-                                return (Node node, edges))
+                                return (NodeLit node, edges))
 
 
 parseEdgeList :: Parser [(NodeExp, IntExp)]
@@ -225,4 +246,4 @@ parseEdgeEntry = parens gdsl (do
                                 destNode <- stringLiteral gdsl
                                 reservedOp gdsl ","
                                 weight <- integer gdsl
-                                return (Node destNode, Const weight))
+                                return (NodeLit destNode, Const weight))
