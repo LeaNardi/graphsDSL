@@ -6,7 +6,22 @@ import Data.Functor (($>))
 import Debug.Trace (trace, traceShow)
 
 import Parser.Lexer ( gdsl )
-import ASTGraphs ( BoolExp(..), Comm(..), GraphExp(..), EdgeExp(..), IntExp(..), NodeExp(..), ValueExp(..), Variable, Weight )
+import ASTGraphs (  
+                    Variable, Weight,
+                    Value(..),
+                    Graph, Edge, Node, UnionFind, Queue,
+                    IntExp(..),
+                    BoolExp(..),
+                    GraphExp(..),
+                    Comm(..),
+                    ValueExp(..),
+                    ListEdgeExp(..),
+                    ListExp(..),
+                    QueueExp(..),
+                    EdgeExp(..),
+                    NodeExp(..),
+                    UnionFindExp(..)
+                  )
 
 
 parseIntExp :: Parser IntExp
@@ -247,3 +262,132 @@ parseEdgeEntry = parens gdsl (do
                                 reservedOp gdsl ","
                                 weight <- integer gdsl
                                 return (NodeLit destNode, Const weight))
+
+parseValueExp :: Parser ValueExp
+parseValueExp = try (IntVal <$> parseIntExp)
+             <|> try (GraphVal <$> parseGraphExp)
+             <|> try (NodeVal <$> parseNodeExp)
+             <|> try (EdgeVal <$> parseEdgeExp)
+             <|> try (ListVal <$> parseListExp)
+             <|> try (QueueVal <$> parseQueueExp)
+             <|> try (UnionFindVal <$> parseUnionFindExp)
+             <|> try (ListEdgeVal <$> parseListEdgeExp)
+
+parseListExp :: Parser ListExp
+parseListExp = try parseNewList
+            <|> try parseVarList
+            <|> try parseAdjacentNodes
+            <|> try parseAddList
+
+parseNewList :: Parser ListExp
+parseNewList = reserved gdsl "newList" $> NewList
+
+parseVarList :: Parser ListExp
+parseVarList = VarList <$> identifier gdsl
+
+parseAdjacentNodes :: Parser ListExp
+parseAdjacentNodes = do
+  reserved gdsl "adjacentNodes"
+  graph <- parseGraphExp
+  node <- parseNodeExp
+  return (AdjacentNodes graph node)
+
+parseAddList :: Parser ListExp
+parseAddList = do
+  reserved gdsl "addList"
+  list <- parseListExp
+  node <- parseNodeExp
+  return (AddList list node)
+
+parseNodeExp :: Parser NodeExp
+parseNodeExp = try (NodeLit <$> stringLiteral gdsl)
+            <|> try (VarNode <$> identifier gdsl)
+            <|> try parseDequeueNode
+
+parseDequeueNode :: Parser NodeExp
+parseDequeueNode = do
+  reserved gdsl "dequeue"
+  queue <- parseQueueExp
+  return (DequeueNode queue)
+
+parseQueueExp :: Parser QueueExp
+parseQueueExp = try parseNewQueue
+             <|> try parseVarQueue
+             <|> try parseEnqueue
+
+parseNewQueue :: Parser QueueExp
+parseNewQueue = reserved gdsl "newQueue" $> NewQueue
+
+parseVarQueue :: Parser QueueExp
+parseVarQueue = VarQueue <$> identifier gdsl
+
+parseEnqueue :: Parser QueueExp
+parseEnqueue = do
+  reserved gdsl "enqueue"
+  queue <- parseQueueExp
+  node <- parseNodeExp
+  return (Enqueue queue node)
+
+parseEdgeExp :: Parser EdgeExp
+parseEdgeExp = try parseVarEdge
+            <|> try parseHeadEdge
+
+parseVarEdge :: Parser EdgeExp
+parseVarEdge = VarEdge <$> identifier gdsl
+
+parseHeadEdge :: Parser EdgeExp
+parseHeadEdge = do
+  reserved gdsl "head"
+  edges <- parseListEdgeExp
+  return (HeadEdge edges)
+
+parseListEdgeExp :: Parser ListEdgeExp
+parseListEdgeExp = try parseVarEdgeList
+                <|> try parseGetEdges
+                <|> try parseSortByWeight
+
+parseVarEdgeList :: Parser ListEdgeExp
+parseVarEdgeList = VarEdgeList <$> identifier gdsl
+
+parseGetEdges :: Parser ListEdgeExp
+parseGetEdges = do
+  reserved gdsl "get_edges"
+  graph <- parseGraphExp
+  return (GetEdges graph)
+
+parseSortByWeight :: Parser ListEdgeExp
+parseSortByWeight = do
+  reserved gdsl "sort_by_weight"
+  edges <- parseListEdgeExp
+  return (SortByWeight edges)
+
+parseUnionFindExp :: Parser UnionFindExp
+parseUnionFindExp = try parseNewUnionFind
+                 <|> try parseVarUnionFind
+                 <|> try parseUnion
+
+parseNewUnionFind :: Parser UnionFindExp
+parseNewUnionFind = do
+  reserved gdsl "newunionfind"
+  ValuedUnionFind <$> parseUnionFindList
+
+parseVarUnionFind :: Parser UnionFindExp
+parseVarUnionFind = VarUnionFind <$> identifier gdsl
+
+parseUnion :: Parser UnionFindExp
+parseUnion = do
+  reserved gdsl "union"
+  node1 <- parseNodeExp
+  node2 <- parseNodeExp
+  uf <- parseUnionFindExp
+  return (Union node1 node2 uf)
+
+parseUnionFindList :: Parser [(NodeExp, NodeExp)]
+parseUnionFindList = brackets gdsl (parseUnionFindEntry `sepBy` reservedOp gdsl ",")
+
+parseUnionFindEntry :: Parser (NodeExp, NodeExp)
+parseUnionFindEntry = parens gdsl (do
+                                    node1 <- stringLiteral gdsl
+                                    reservedOp gdsl ","
+                                    node2 <- stringLiteral gdsl
+                                    return (NodeLit node1, NodeLit node2))
