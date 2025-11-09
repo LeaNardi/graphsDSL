@@ -249,4 +249,4 @@ parseAssignment = do
   var <- identifier gdsl
   reservedOp gdsl ":="
   expr <- parseExpr  -- Any expression! Much simpler than before
-  return $ LetValue var expr
+  return $ AssignValue var expr

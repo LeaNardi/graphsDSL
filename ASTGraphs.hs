@@ -98,7 +98,7 @@ data FunctionType =
 -- Commands (largely unchanged, but using untyped expressions)
 data Comm = Skip
           | Seq Comm Comm
-          | LetValue Variable Expr  -- Now takes any expression
+          | AssignValue Variable Expr  -- Now takes any expression
           | Cond Expr Comm Comm     -- Condition is just an expression
           | While Expr Comm         -- Condition is just an expression
           | For Variable Expr Comm  -- List expression is just an expression
