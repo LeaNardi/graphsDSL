@@ -1,0 +1,7 @@
+// Simple conditional example  
+x := 10;
+cond x > 5 then
+  print true
+else
+  print false
+end

@@ -1,28 +1,27 @@
-g := newgraph [
-    ("1", [("2",22), ("3",55)] ),
-    ("2", [("1",22), ("5",33)] ),
-    ("3", [("1",55), ("4",11)] ),
-    ("4", [("3",11), ("5",44)] ),
-    ("5", [("2",33), ("4",44)] )
+g := graph [
+    ("1", [("2", 22), ("3", 55)] ),
+    ("2", [("1", 22), ("5", 33)] ),
+    ("3", [("1", 55), ("4", 11)] ),
+    ("4", [("3", 11), ("5", 44)] ),
+    ("5", [("2", 33), ("4", 44)] )
 ];
 
-NodosVisitados := newList()
-Q := newQueue()
+NodosVisitados := emptyList;
+Q := emptyQueue;
 
-Q:= enqueue Q "1"
-NodosVisitados := addList NodosVisitados "1"
+Q := enqueue(Q, "1");
+NodosVisitados := add(NodosVisitados, "1");
 
-repeat
-	node := dequeue Q
-	
-	for neighbor in (adjacentNodes nodo) do
-		if ~(inList NodosVisitados neighbor) then
-			Q:= enqueue Q neighbor
-			NodosVisitados:= addList NodosVisitados neighbor
+while !(isEmpty(Q)) do
+    node := dequeueNode(Q);
+    Q := dequeue(Q);
+    
+    for neighbor in adjacentNodes(g, node) do
+        cond !(inList(NodosVisitados, neighbor)) then
+            Q := enqueue(Q, neighbor);
+            NodosVisitados := add(NodosVisitados, neighbor)
         else
             skip
         end
     end
-until 
-    ~(isEmptyCola Q) 
 end
