@@ -2,7 +2,7 @@ module Eval.Core ( evalComm, evalExpr ) where
 
 import ASTGraphs ( Comm(..), Expr(..), BinOpType(..), CompOpType(..), FunctionType(..), Value(..), Graph(..), Node(..), Edge(..), Queue(..) )
 import Eval.MonadClasses ( MonadError(..), MonadState(lookfor, update), MonadTick(..) )
-import Utils ( addNode, addEdge )
+import Eval.Utils ( addNode, addEdge )
 import Control.Monad ( when )
 import Data.List (intersect)
 
