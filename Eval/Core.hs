@@ -1,8 +1,8 @@
 module Eval.Core ( evalComm ) where
 
-import ASTGraphs ( Comm(..), BoolExp(..), IntExp(..), GraphExp(..), ValueExp(..), Value, Ticks, Env, Graph, Edge )
+import ASTGraphs ( Comm(..), BoolExp(..), IntExp(..), GraphExp(..), ValueExp(..), Value, Graph )
 import Eval.MonadClasses ( MonadError(..), MonadState(lookfor, update), MonadTick(..) )
-import Utils ( addNode, addEdge, kruskal, isUndirected )
+import Utils ( addNode, addEdge )
 import Control.Monad ( when )
 import Data.List (intersect)
 

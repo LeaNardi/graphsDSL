@@ -2,9 +2,9 @@ module ASTGraphs where
 
 -- Alias
 type Variable = String
-type Env = [(Variable, Value)]
+type Env = [(Variable, Value)] -- Podria moverse a Eval/StateErrorTick.hs
 type Weight = Integer
-type Ticks = Integer
+type Ticks = Integer -- Podria moverse a Eval/StateErrorTick.hs
 
 -- Runtime Values
 data Value = IntValue Integer
