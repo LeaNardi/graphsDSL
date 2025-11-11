@@ -2,7 +2,7 @@ module Main where
 
 import System.Environment (getArgs)
 import Parser.Parser (parseGraphs)
--- import Eval.Eval (eval)
+import Eval.Eval (eval)
 
 
 -- Para compilar:
@@ -23,7 +23,7 @@ main = do args <- getArgs
                                     putStrLn "AST parseado:"
                                     print ast
                                     putStrLn "\nResultado de la evaluación:"
-                                    -- print (eval ast)
+                                    print (eval ast)
             _          ->  putStrLn "Formato esperado: Main.hs Programas/ejemplo.gph"
 
 

@@ -1,6 +1,6 @@
-module Eval.Core ( evalComm ) where
+module Eval.Core ( evalComm, evalExpr ) where
 
-import ASTGraphs ( Comm(..), BoolExp(..), IntExp(..), GraphExp(..), ValueExp(..), Value, Graph )
+import ASTGraphs ( Comm(..), Expr(..), BinOpType(..), CompOpType(..), FunctionType(..), Value(..), Graph(..), Node(..), Edge(..), Queue(..) )
 import Eval.MonadClasses ( MonadError(..), MonadState(lookfor, update), MonadTick(..) )
 import Utils ( addNode, addEdge )
 import Control.Monad ( when )
@@ -9,131 +9,153 @@ import Data.List (intersect)
 
 evalComm :: (MonadState m, MonadError m, MonadTick m) => Comm -> m ()
 evalComm Skip = return ()
-evalComm (LetValue v valExp) = do val <- evalValueExp valExp
-                                  update v val
+evalComm (AssignValue v expr) = do val <- evalExpr expr
+                                   update v val
 evalComm (Seq c1 c2) = do evalComm c1
                           evalComm c2
-evalComm (Cond b c1 c2) = do cond <- evalBoolExp b
-                             if cond then evalComm c1 else evalComm c2
-evalComm (Repeat b c) = do cond <- evalBoolExp b
-                           when cond (evalComm (Seq c (Repeat b c)))
+evalComm (Cond expr c1 c2) = do val <- evalExpr expr
+                                case val of
+                                  IntValue i -> if i /= 0 then evalComm c1 else evalComm c2
+                                  _ -> throw
+evalComm (While expr c) = do val <- evalExpr expr
+                             case val of
+                               IntValue i -> when (i /= 0) (evalComm (Seq c (While expr c)))
+                               _ -> throw
+evalComm (For v listExpr c) = do val <- evalExpr listExpr
+                                 case val of
+                                   ListValue nodes -> mapM_ (\node -> do update v (NodeValue node); evalComm c) nodes
+                                   _ -> throw
+evalComm (Print expr) = do evalExpr expr
+                           return ()
 
 
-evalBoolExp :: (MonadState m, MonadError m, MonadTick m) => BoolExp -> m Bool
-evalBoolExp BTrue     = return True
-evalBoolExp BFalse    = return False
-evalBoolExp (Eq l r)  = do lval <- evalIntExp l
-                           rval <- evalIntExp r
-                           return (lval == rval)
-evalBoolExp (Lt l r)  = do lval <- evalIntExp l
-                           rval <- evalIntExp r
-                           return (lval < rval)
-evalBoolExp (Gt l r)  = do lval <- evalIntExp l
-                           rval <- evalIntExp r
-                           return (lval > rval)
-evalBoolExp (And l r) = do lval <- evalBoolExp l
-                           rval <- evalBoolExp r
-                           return (lval && rval)
-evalBoolExp (Or l r)  = do lval <- evalBoolExp l
-                           rval <- evalBoolExp r
-                           return (lval || rval)
-evalBoolExp (Not b)   = do bval <- evalBoolExp b
-                           return (not bval)
+evalExpr :: (MonadState m, MonadError m, MonadTick m) => Expr -> m Value
+-- Literals
+evalExpr (IntLit n) = return (IntValue n)
+evalExpr (BoolLit True) = return (IntValue 1)  -- Using integers for booleans (1 = true, 0 = false)
+evalExpr (BoolLit False) = return (IntValue 0)
+evalExpr (NodeLit s) = return (NodeValue (Node s))
+evalExpr EmptyList = return (ListValue [])
+evalExpr EmptyQueue = return (QueueValue (Queue []))
+evalExpr EmptyEdgeList = return (ListEdgeValue [])
 
+-- Variables
+evalExpr (Var v) = lookfor v
 
-evalValueExp :: (MonadState m, MonadError m, MonadTick m) => ValueExp -> m Value
-evalValueExp (IntVal i) = Left <$> evalIntExp i
-evalValueExp (GraphVal g) = Right <$> evalGraphExp g
+-- Arithmetic Operations
+evalExpr (UMinus e) = do
+  val <- evalExpr e
+  case val of
+    IntValue i -> return (IntValue (negate i))
+    _ -> throw
 
+evalExpr (BinOp op l r) = do
+  lval <- evalExpr l
+  rval <- evalExpr r
+  case (lval, rval) of
+    (IntValue l', IntValue r') -> do
+      tick
+      case op of
+        Plus -> return (IntValue (l' + r'))
+        Minus -> return (IntValue (l' - r'))
+        Times -> return (IntValue (l' * r'))
+        Div -> if r' == 0 then throw else return (IntValue (div l' r'))
+        Mod -> if r' == 0 then throw else return (IntValue (mod l' r'))
+    _ -> throw
 
-evalIntExp :: (MonadState m, MonadError m, MonadTick m) => IntExp -> m Integer
-evalIntExp (Const n)   = return n
-evalIntExp (VarInt v)  = do val <- lookfor v
-                            case val of
-                              Left i  -> return i
-                              Right _ -> throw
-evalIntExp (UMinus e)  = do val <- evalIntExp e
-                            return (negate val)
-evalIntExp (Plus l r)  = do lval <- evalIntExp l
-                            rval <- evalIntExp r
-                            tick
-                            return (lval + rval)
-evalIntExp (Minus l r) = do lval <- evalIntExp l
-                            rval <- evalIntExp r
-                            tick
-                            return (lval - rval)
-evalIntExp (Times l r) = do lval <- evalIntExp l
-                            rval <- evalIntExp r
-                            tick
-                            return (lval * rval)
-evalIntExp (Div l r)   = do lval <- evalIntExp l
-                            rval <- evalIntExp r
-                            if rval == 0 then throw
-                            else do tick
-                                    return (div lval rval)
-evalIntExp (Mod l r)   = do lval <- evalIntExp l
-                            rval <- evalIntExp r
-                            if rval == 0 then throw
-                            else do tick
-                                    return (mod lval rval)
-evalIntExp (Question b l r) = do cond <- evalBoolExp b
-                                 lval <- evalIntExp l
-                                 rval <- evalIntExp r
-                                 if cond then return lval else return rval
+-- Boolean Operations
+evalExpr (Not e) = do
+  val <- evalExpr e
+  case val of
+    IntValue 0 -> return (IntValue 1)
+    IntValue _ -> return (IntValue 0)
+    _ -> throw
 
+evalExpr (Comparison op l r) = do
+  lval <- evalExpr l
+  rval <- evalExpr r
+  case op of
+    Eq -> case (lval, rval) of
+      (IntValue l', IntValue r') -> return (IntValue (if l' == r' then 1 else 0))
+      _ -> throw
+    Lt -> case (lval, rval) of
+      (IntValue l', IntValue r') -> return (IntValue (if l' < r' then 1 else 0))
+      _ -> throw
+    Gt -> case (lval, rval) of
+      (IntValue l', IntValue r') -> return (IntValue (if l' > r' then 1 else 0))
+      _ -> throw
+    And -> case (lval, rval) of
+      (IntValue l', IntValue r') -> return (IntValue (if l' /= 0 && r' /= 0 then 1 else 0))
+      _ -> throw
+    Or -> case (lval, rval) of
+      (IntValue l', IntValue r') -> return (IntValue (if l' /= 0 || r' /= 0 then 1 else 0))
+      _ -> throw
+    EqNode -> case (lval, rval) of
+      (NodeValue n1, NodeValue n2) -> return (IntValue (if n1 == n2 then 1 else 0))
+      _ -> throw
 
-evalGraphExp :: (MonadState m, MonadError m, MonadTick m) => GraphExp -> m Graph
-evalGraphExp (ValuedGraph g) = return g
-evalGraphExp (VarGraph v) = do val <- lookfor v
-                               case val of
-                                 Right g -> return g
-                                 Left _  -> throw
-evalGraphExp (AddNode g n) = do gval <- evalGraphExp g
-                                return (addNode n gval)
--- evalGraphExp (AddDirectedEdge g (u, v) w) = do gval <- evalGraphExp g
---                                                let nodes = map fst gval
---                                                if u `elem` nodes && v `elem` nodes
---                                                  then return (addDirectedEdge u v w gval)
---                                                  else throw
-evalGraphExp (AddEdge g (u, v) w) = do  gval <- evalGraphExp g
-                                        let nodes = map fst gval
-                                        if u `elem` nodes && v `elem` nodes
-                                            then return (addEdge u v w gval)
-                                            else throw
-evalGraphExp (GraphIntersection g1 g2) = do
-  
-  gval1 <- evalGraphExp g1
-  gval2 <- evalGraphExp g2
+-- Conditional Expression
+evalExpr (Question cond thenE elseE) = do
+  condVal <- evalExpr cond
+  case condVal of
+    IntValue 0 -> evalExpr elseE
+    IntValue _ -> evalExpr thenE
+    _ -> throw
 
-  let nodes1 = map fst gval1
-      nodes2 = map fst gval2
-      nodes = nodes1 `intersect` nodes2
+-- Complex constructors
+evalExpr (ValuedGraph nodeList) = do
+  graph <- mapM evalNodeEntry nodeList
+  return (GraphValue (Graph graph))
+  where
+    evalNodeEntry (nodeExpr, adjList) = do
+      nodeVal <- evalExpr nodeExpr
+      case nodeVal of
+        NodeValue node -> do
+          adjVals <- mapM evalAdjEntry adjList
+          return (node, adjVals)
+        _ -> throw
+    evalAdjEntry (nodeExpr, weightExpr) = do
+      nodeVal <- evalExpr nodeExpr
+      weightVal <- evalExpr weightExpr
+      case (nodeVal, weightVal) of
+        (NodeValue node, IntValue weight) -> return (node, weight)
+        _ -> throw
 
-      getEdges g = [ (u, v, w) | (u, vw) <- g, (v, w) <- vw ]
-      edges1 = getEdges gval1
-      edges2 = getEdges gval2
+evalExpr (ValuedEdge n1Expr n2Expr wExpr) = do
+  n1Val <- evalExpr n1Expr
+  n2Val <- evalExpr n2Expr
+  wVal <- evalExpr wExpr
+  case (n1Val, n2Val, wVal) of
+    (NodeValue n1, NodeValue n2, IntValue w) -> return (EdgeValue (Edge n1 n2 w))
+    _ -> throw
 
-      edges = [ (u, v, w) 
-              | (u, v, w) <- edges1
-              , (u', v', w') <- edges2
-              , w == w'
-              , (u == u' && v == v') || (u == v' && v == u')
-              ]
+-- Simple function calls (minimal implementation for academic purposes)
+evalExpr (FunCall AddNode [graphExpr, nodeExpr]) = do
+  graphVal <- evalExpr graphExpr
+  nodeVal <- evalExpr nodeExpr
+  case (graphVal, nodeVal) of
+    (GraphValue graph, NodeValue node) -> return (GraphValue (addNode node graph))
+    _ -> throw
 
-      finalGraphWithOnlyNodes = foldr addNode [] nodes
-      finalGraph = foldr (\(u, v, w) g -> addEdge u v w g) finalGraphWithOnlyNodes edges
+evalExpr (FunCall AddEdge [graphExpr, node1Expr, node2Expr, weightExpr]) = do
+  graphVal <- evalExpr graphExpr
+  node1Val <- evalExpr node1Expr
+  node2Val <- evalExpr node2Expr
+  weightVal <- evalExpr weightExpr
+  case (graphVal, node1Val, node2Val, weightVal) of
+    (GraphValue graph, NodeValue node1, NodeValue node2, IntValue weight) -> 
+      return (GraphValue (addEdge node1 node2 weight graph))
+    _ -> throw
 
-  return finalGraph
+-- Lists
+evalExpr (ListConstruct exprs) = do
+  vals <- mapM evalExpr exprs
+  -- Assume all elements are nodes for simplicity
+  nodes <- mapM extractNode vals
+  return (ListValue nodes)
+  where
+    extractNode (NodeValue node) = return node
+    extractNode _ = throw
 
--- evalGraphExp (Kruskal g) = do gval <- evalGraphExp g
---                               if isUndirected gval
---                                 then return (kruskal gval)
---                                 else throw
-
-evalGraphExp (GraphComplement g ) = do
-  
-  gval <- evalGraphExp g
-
-  let nodes = map fst gval
-
-  return finalGraph
+-- Default case for unimplemented function calls
+evalExpr (FunCall _ _) = throw
