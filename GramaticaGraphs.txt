@@ -1,0 +1,88 @@
+comm ::= skip
+        | cond boolexp then comm else comm end
+        | while boolexp do comm end
+        | for identifier in listexp do comm end
+        | print stringexp
+        | var := expr
+
+
+expr ::= condexpr
+        | logicalexp
+        | comparisonexp
+        | arithmeticexp
+
+
+
+
+
+condexpr ::= logicalexp ? expr : expr
+
+
+
+logicalexp ::= comparisonexp
+                | comparisonexp && comparisonexp
+                | comparisonexp || comparisonexp
+
+
+
+comparisonexp ::= arithmeticexp == arithmeticexp
+                | arithmeticexp < arithmeticexp
+                | arithmeticexp > arithmeticexp
+                | arithmeticexp =node arithmeticexp
+
+
+
+
+arithmeticexp ::= term
+                | term + term
+                | term - term
+
+term ::= factor
+        | factor * factor
+        | factor / factor
+        | factor % factor
+
+
+factor ::= IntLit
+        | BoolLit
+        | StringLit
+        | EmptyLit
+        | function
+        | var
+        | graphexp
+        | edgeexp
+        | listexp
+        | unary
+        | ( expr )
+
+
+function ::= addNode
+        | deleteNode
+        | addEdge
+        | deleteEdge
+        | complement
+        | union
+        | intersection
+        | getEdges
+        | adjacentNodes
+        | getWeight
+        | getNode1
+        | getNode2
+        | len
+        | head
+        | tail
+        | add
+        | sortByWeight
+        | headEdge
+        | tailEdges
+        | queueLen
+        | enqueue
+        | dequeue
+        | dequeueNode
+        | isEmpty
+        | unionFind
+        | find
+        | esCiclico
+        | esConexo
+        | inList
+        | isEmptyList

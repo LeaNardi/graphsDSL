@@ -1,6 +1,6 @@
 module Parser.Core where
 
-import Text.ParserCombinators.Parsec ( chainl1, sepBy, (<|>), try, Parser, option )
+import Text.ParserCombinators.Parsec ( chainl1, sepBy, (<|>), try, Parser, option, many )
 import Text.Parsec.Token ( GenTokenParser( integer, reserved, identifier, brackets, parens, stringLiteral, reservedOp, comma) )
 import Data.Functor (($>))
 
@@ -12,9 +12,10 @@ import ASTGraphs ( Expr(..), Comm(..), BinOpType(..), CompOpType(..), FunctionTy
 
 -- Parse complete program (commands)
 parseComm :: Parser Comm
-parseComm = chainl1 parseSimpleComm parseSeqOp
-  where
-    parseSeqOp = reservedOp gdsl ";" $> Seq
+parseComm = do
+  first <- parseSimpleComm
+  rest <- many (reservedOp gdsl ";" >> parseSimpleComm)
+  return $ foldl Seq first rest
 
 -- Parse individual commands
 parseSimpleComm :: Parser Comm
@@ -34,44 +35,52 @@ parseExpr = parseConditional
 
 -- Conditional expressions (? :)
 parseConditional :: Parser Expr
-parseConditional = do
-  cond <- parseLogical
-  option cond $ do
-    reservedOp gdsl "?"
-    thenExpr <- parseExpr
-    reservedOp gdsl ":"
-    elseExpr <- parseExpr
-    return $ Question cond thenExpr elseExpr
+parseConditional = 
+  try (do cond <- parseLogical
+          reservedOp gdsl "?"
+          thenExpr <- parseExpr
+          reservedOp gdsl ":"
+          elseExpr <- parseExpr
+          return $ Question cond thenExpr elseExpr)
+  <|> parseLogical
 
 -- Logical operations (&&, ||)
 parseLogical :: Parser Expr
-parseLogical = chainl1 parseComparison parseLogicalOp
-  where
-    parseLogicalOp = (reservedOp gdsl "&&" $> Comparison And)
-                  <|> (reservedOp gdsl "||" $> Comparison Or)
+parseLogical = do
+  left <- parseComparison
+  rest <- many ((,) <$> ((reservedOp gdsl "&&" $> Comparison And)
+                      <|> (reservedOp gdsl "||" $> Comparison Or))
+                    <*> parseComparison)
+  return $ foldl (\acc (op, right) -> op acc right) left rest
 
 -- Comparison operations (==, <, >, etc.)
 parseComparison :: Parser Expr
-parseComparison = chainl1 parseArithmetic parseCompOp
-  where
-    parseCompOp = (reservedOp gdsl "==" $> Comparison Eq)
-               <|> (reservedOp gdsl "<" $> Comparison Lt)
-               <|> (reservedOp gdsl ">" $> Comparison Gt)
-               <|> (reservedOp gdsl "=node" $> Comparison EqNode) -- Special node comparison
+parseComparison = do
+  left <- parseArithmetic
+  rest <- many ((,) <$> ((reservedOp gdsl "==" $> Comparison Eq)
+                      <|> (reservedOp gdsl "<" $> Comparison Lt)
+                      <|> (reservedOp gdsl ">" $> Comparison Gt)
+                      <|> (reservedOp gdsl "=node" $> Comparison EqNode)) -- Special node comparison
+                    <*> parseArithmetic)
+  return $ foldl (\acc (op, right) -> op acc right) left rest
 
 -- Arithmetic operations (+, -, *, /, %)
 parseArithmetic :: Parser Expr
-parseArithmetic = chainl1 parseTerm parseAddOp
-  where
-    parseAddOp = (reservedOp gdsl "+" $> BinOp Plus)
-              <|> (reservedOp gdsl "-" $> BinOp Minus)
+parseArithmetic = do
+  left <- parseTerm
+  rest <- many ((,) <$> ((reservedOp gdsl "+" $> BinOp Plus)
+                      <|> (reservedOp gdsl "-" $> BinOp Minus))
+                    <*> parseTerm)
+  return $ foldl (\acc (op, right) -> op acc right) left rest
 
 parseTerm :: Parser Expr
-parseTerm = chainl1 parseFactor parseMulOp
-  where
-    parseMulOp = (reservedOp gdsl "*" $> BinOp Times)
-              <|> (reservedOp gdsl "/" $> BinOp Div)
-              <|> (reservedOp gdsl "%" $> BinOp Mod)
+parseTerm = do
+  left <- parseFactor
+  rest <- many ((,) <$> ((reservedOp gdsl "*" $> BinOp Times)
+                      <|> (reservedOp gdsl "/" $> BinOp Div)
+                      <|> (reservedOp gdsl "%" $> BinOp Mod))
+                    <*> parseFactor)
+  return $ foldl (\acc (op, right) -> op acc right) left rest
 
 -- Basic expressions (literals, variables, function calls, etc.)
 parseFactor :: Parser Expr
