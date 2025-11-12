@@ -1,88 +1,104 @@
 comm ::= skip
-        | cond boolexp then comm else comm end
-        | while boolexp do comm end
-        | for identifier in listexp do comm end
-        | print stringexp
-        | var := expr
+        | cond expr then comm else comm end
+        | while expr do comm end
+        | for identifier in expr do comm end
+        | print expr
+        | identifier := expr
 
 
 expr ::= condexpr
-        | logicalexp
-        | comparisonexp
-        | arithmeticexp
 
 
 
 
 
 condexpr ::= logicalexp ? expr : expr
+        | logicalexp
 
 
 
 logicalexp ::= comparisonexp
-                | comparisonexp && comparisonexp
-                | comparisonexp || comparisonexp
+                | logicalexp && comparisonexp
+                | logicalexp || comparisonexp
 
 
 
-comparisonexp ::= arithmeticexp == arithmeticexp
-                | arithmeticexp < arithmeticexp
-                | arithmeticexp > arithmeticexp
-                | arithmeticexp =node arithmeticexp
+comparisonexp ::= arithmeticexp
+                | comparisonexp == arithmeticexp
+                | comparisonexp < arithmeticexp
+                | comparisonexp > arithmeticexp
+                | comparisonexp =node arithmeticexp
 
 
 
 
 arithmeticexp ::= term
-                | term + term
-                | term - term
+                | arithmeticexp + term
+                | arithmeticexp - term
 
 term ::= factor
-        | factor * factor
-        | factor / factor
-        | factor % factor
+        | term * factor
+        | term / factor
+        | term % factor
 
 
-factor ::= IntLit
-        | BoolLit
-        | StringLit
-        | EmptyLit
-        | function
-        | var
+factor ::= number
+        | boolean
+        | string
+        | emptyliteral
+        | functioncall
+        | identifier
         | graphexp
         | edgeexp
         | listexp
         | unary
         | ( expr )
 
+number ::= [0-9]+
 
-function ::= addNode
-        | deleteNode
-        | addEdge
-        | deleteEdge
-        | complement
-        | union
-        | intersection
-        | getEdges
-        | adjacentNodes
-        | getWeight
-        | getNode1
-        | getNode2
-        | len
-        | head
-        | tail
-        | add
-        | sortByWeight
-        | headEdge
-        | tailEdges
-        | queueLen
-        | enqueue
-        | dequeue
-        | dequeueNode
-        | isEmpty
-        | unionFind
-        | find
-        | esCiclico
-        | esConexo
-        | inList
-        | isEmptyList
+boolean ::= true | false
+
+string ::= " [^"]* "
+
+emptyliteral ::= emptyList | emptyQueue | emptyEdgeList
+
+identifier ::= [a-zA-Z][a-zA-Z0-9_]*
+
+unary ::= - factor | ! factor
+
+
+functioncall ::= functionname ( arglist )
+
+functionname ::= addNode | deleteNode | addEdge | deleteEdge
+        | complement | union | intersection | getEdges | adjacentNodes
+        | getWeight | getNode1 | getNode2
+        | len | head | tail | add | sortByWeight | headEdge | tailEdges
+        | queueLen | enqueue | dequeue | dequeueNode | isEmpty
+        | unionFind | find
+        | esCiclico | esConexo | inList | isEmptyList
+
+arglist ::= expr
+        | expr , arglist
+        | ε
+
+graphexp ::= graph [ nodelist ]
+
+nodelist ::= nodeassoc
+        | nodeassoc , nodelist
+        | ε
+
+nodeassoc ::= ( expr , [ edgelist ] )
+
+edgelist ::= edgeassoc
+        | edgeassoc , edgelist
+        | ε
+
+edgeassoc ::= ( expr , expr )
+
+edgeexp ::= edge ( expr , expr , expr )
+
+listexp ::= [ exprlist ]
+
+exprlist ::= expr
+        | expr , exprlist
+        | ε
