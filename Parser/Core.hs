@@ -92,6 +92,7 @@ parseFactor = try parseNumber
            <|> try parseVariable
            <|> try parseValuedGraph
            <|> try parseValuedEdge
+           <|> try parseQueue
            <|> try parseList
            <|> try parseUnary
            <|> parseParens
@@ -100,19 +101,34 @@ parseFactor = try parseNumber
 -- ===============
 
 parseNumber :: Parser Expr
-parseNumber = IntLit <$> integer gdsl
+parseNumber = try parseFloat <|> parseInt
+  where
+    parseInt = IntLit <$> integer gdsl
+    parseFloat = do
+      intPart <- integer gdsl
+      reservedOp gdsl "."
+      fracPart <- integer gdsl
+      let floatVal = fromInteger intPart + fromInteger fracPart / (10 ^ length (show fracPart))
+      return $ FloatLit floatVal
 
 parseBool :: Parser Expr
 parseBool = (reserved gdsl "true" $> BoolLit True)
          <|> (reserved gdsl "false" $> BoolLit False)
 
 parseString :: Parser Expr  
-parseString = NodeLit <$> stringLiteral gdsl
+parseString = try parseStringLit <|> parseNodeLit
+  where
+    -- String literals with quotes
+    parseStringLit = StringLit <$> stringLiteral gdsl
+    -- Node literals are strings prefixed with @
+    parseNodeLit = do
+      reservedOp gdsl "@"
+      nodeName <- stringLiteral gdsl
+      return $ NodeLit nodeName
 
 parseEmptyLiterals :: Parser Expr
 parseEmptyLiterals = (reserved gdsl "emptyList" $> EmptyList)
                   <|> (reserved gdsl "emptyQueue" $> EmptyQueue)
-                  <|> (reserved gdsl "emptyEdgeList" $> EmptyEdgeList)
 
 parseVariable :: Parser Expr
 parseVariable = Var <$> identifier gdsl
@@ -209,6 +225,12 @@ parseValuedEdge = do
 
 parseList :: Parser Expr
 parseList = brackets gdsl $ ListConstruct <$> sepBy parseExpr (comma gdsl)
+
+parseQueue :: Parser Expr
+parseQueue = do
+  reserved gdsl "queue"
+  elements <- brackets gdsl $ sepBy parseExpr (comma gdsl)
+  return $ QueueConstruct elements
 
 -- COMMAND PARSERS
 -- ===============

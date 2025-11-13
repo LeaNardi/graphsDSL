@@ -3,36 +3,37 @@ module ASTGraphs where
 -- Alias
 type Variable = String
 type Env = [(Variable, Value)] -- Podria moverse a Eval/StateErrorTick.hs
-type Weight = Integer
+type Weight = Float  -- Changed to Float for more flexibility
 type Ticks = Integer -- Podria moverse a Eval/StateErrorTick.hs
 
--- Runtime Values
+-- Runtime Values -- No se usa en Parser, se usa en Eval
 data Value = IntValue Integer
-           | GraphValue Graph
-           | EdgeValue Edge
+           | FloatValue Float        -- Added Float support
+           | BoolValue Bool         -- Added Bool support (separate from Int)
+           | StringValue String     -- Added String support (separate from Node)
            | NodeValue Node
-           | ListEdgeValue [Edge]
-           | UnionFindValue UnionFind
+           | EdgeValue Edge
+           | GraphValue Graph
+           | ListValue [Value]      -- Generic list (can hold any values)
            | QueueValue Queue
-           | ListValue [Node]
  deriving (Show, Eq)
 
 -- Core data types for runtime values (unchanged)
 data Graph = Graph [(Node, [(Node, Weight)])] deriving (Show, Eq)
 data Edge = Edge Node Node Weight deriving (Show, Eq)
 data Node = Node String deriving (Show, Eq, Ord)
-data UnionFind = UnionFind [(Node, Node)] deriving (Show, Eq)
-data Queue = Queue [Node] deriving (Show, Eq)
+data Queue = Queue [Value] deriving (Show, Eq)  -- Generic queue for any values
 
 -- UNTYPED AST - Single Expression type
 data Expr = 
     -- Literals
     IntLit Integer
+  | FloatLit Float       -- Added Float literals
   | BoolLit Bool
-  | NodeLit String
+  | StringLit String     -- Added String literals (separate from NodeLit)
+  | NodeLit String       -- Node literals (for graph nodes)
   | EmptyList
   | EmptyQueue
-  | EmptyEdgeList
   
   -- Variables
   | Var Variable
@@ -54,10 +55,10 @@ data Expr =
   -- Complex constructors
   | ValuedGraph [(Expr, [(Expr, Expr)])]  -- [(node, [(node, weight)])]
   | ValuedEdge Expr Expr Expr             -- node1 node2 weight
-  | ValuedUnionFind [(Expr, Expr)]        -- [(node, node)]
   
-  -- Lists
-  | ListConstruct [Expr]
+  -- Collections
+  | ListConstruct [Expr]                  -- Generic list constructor
+  | QueueConstruct [Expr]                 -- Queue constructor
   
  deriving (Show, Eq)
 
