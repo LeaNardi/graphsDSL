@@ -1,6 +1,6 @@
 module Eval.Core ( evalComm, evalExpr ) where
 
-import ASTGraphs ( Comm(..), Expr(..), BinOpType(..), CompOpType(..), FunctionType(..), Value(..), Graph(..), Node(..), Edge(..), Queue(..) )
+import ASTGraphs ( Comm(..), Expr(..), BinOpType(..), CompOpType(..), FunctionType(..), Value(..), Graph(..), Node, Edge(..), Queue(..) )
 import Eval.MonadClasses ( MonadError(..), MonadState(lookfor, update), MonadTick(..) )
 import Eval.Utils ( addNode, addEdge )
 import Control.Monad ( when )
@@ -39,7 +39,7 @@ evalExpr (IntLit n) = return (IntValue n)
 evalExpr (FloatLit f) = return (FloatValue f)
 evalExpr (BoolLit b) = return (BoolValue b)  -- Now using proper Bool values
 evalExpr (StringLit s) = return (StringValue s)
-evalExpr (NodeLit s) = return (NodeValue (Node s))
+evalExpr (NodeLit s) = return (NodeValue s)  -- Node is now just String
 evalExpr EmptyList = return (ListValue [])
 evalExpr EmptyQueue = return (QueueValue (Queue []))
 
@@ -150,7 +150,7 @@ evalExpr (ValuedGraph nodeList) = do
       nodeVal <- evalExpr nodeExpr
       node <- case nodeVal of
         NodeValue n -> return n
-        StringValue s -> return (Node s)  -- Auto-convert strings to nodes
+        StringValue s -> return s  -- Auto-convert strings to nodes
         _ -> throw
       adjVals <- mapM evalAdjEntry adjList
       return (node, adjVals)
@@ -159,7 +159,7 @@ evalExpr (ValuedGraph nodeList) = do
       weightVal <- evalExpr weightExpr
       node <- case nodeVal of
         NodeValue n -> return n
-        StringValue s -> return (Node s)  -- Auto-convert strings to nodes
+        StringValue s -> return s  -- Auto-convert strings to nodes
         _ -> throw
       weight <- case weightVal of
         FloatValue w -> return w
@@ -173,11 +173,11 @@ evalExpr (ValuedEdge n1Expr n2Expr wExpr) = do
   wVal <- evalExpr wExpr
   n1 <- case n1Val of
     NodeValue n -> return n
-    StringValue s -> return (Node s)  -- Auto-convert strings to nodes
+    StringValue s -> return s  -- Auto-convert strings to nodes
     _ -> throw
   n2 <- case n2Val of
     NodeValue n -> return n
-    StringValue s -> return (Node s)  -- Auto-convert strings to nodes
+    StringValue s -> return s  -- Auto-convert strings to nodes
     _ -> throw
   w <- case wVal of
     FloatValue f -> return f
@@ -193,7 +193,7 @@ evalExpr (FunCall AddNode [graphExpr, nodeExpr]) = do
     GraphValue graph -> do
       node <- case nodeVal of
         NodeValue n -> return n
-        StringValue s -> return (Node s)  -- Auto-convert strings to nodes
+        StringValue s -> return s  -- Auto-convert strings to nodes
         _ -> throw
       return (GraphValue (addNode node graph))
     _ -> throw
@@ -207,18 +207,17 @@ evalExpr (FunCall AddEdge [graphExpr, node1Expr, node2Expr, weightExpr]) = do
     GraphValue graph -> do
       node1 <- case node1Val of
         NodeValue n -> return n
-        StringValue s -> return (Node s)  -- Auto-convert strings to nodes
+        StringValue s -> return s  -- Auto-convert strings to nodes
         _ -> throw
       node2 <- case node2Val of
         NodeValue n -> return n
-        StringValue s -> return (Node s)  -- Auto-convert strings to nodes
+        StringValue s -> return s  -- Auto-convert strings to nodes
         _ -> throw
       weight <- case weightVal of
         FloatValue w -> return w
         IntValue i -> return (fromInteger i)  -- Convert Int to Float
         _ -> throw
       return (GraphValue (addEdge node1 node2 weight graph))
-    _ -> throw
     _ -> throw
 
 -- Lists and Queues

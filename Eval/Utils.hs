@@ -1,6 +1,6 @@
 module Eval.Utils where
 
-import ASTGraphs ( Edge(..), Graph(..), Node(..), Weight )
+import ASTGraphs ( Edge(..), Graph(..), Node, Weight )
 import Data.List (sortBy)
 
 

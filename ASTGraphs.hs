@@ -20,9 +20,9 @@ data Value = IntValue Integer
 
 -- Core data types for runtime values (unchanged)
 data Graph = Graph [(Node, [(Node, Weight)])] deriving (Show, Eq)
+type Node = String
 data Edge = Edge Node Node Weight deriving (Show, Eq)
-data Node = Node String deriving (Show, Eq, Ord)
-data Queue = Queue [Value] deriving (Show, Eq)  -- Generic queue for any values
+data Queue = Queue [Value] deriving (Show, Eq)
 
 -- UNTYPED AST - Single Expression type
 data Expr = 

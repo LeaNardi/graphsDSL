@@ -6,7 +6,7 @@ x := 42;
 y := 3.14;
 flag := true;
 message := "Hello World";
-node1 := @"A";
+node1 := "A";
 
 // Arithmetic with mixed types
 sum := x + y;  // Should promote to Float: 45.14
@@ -16,24 +16,24 @@ result := flag && (x > 30);  // Should be true
 
 // Graph construction with Float weights
 g := graph [
-    (@"A", [(@"B", 2.5), (@"C", 1.0)]),
-    (@"B", [(@"A", 2.5)]),
-    (@"C", [(@"A", 1.0)])
+    ("A", [("B", 2.5), ("C", 1.0)]),
+    ("B", [("A", 2.5)]),
+    ("C", [("A", 1.0)])
 ];
 
 // Edge with Float weight
-edge1 := edge(@"D", @"E", 4.2);
+edge1 := edge("D", "E", 4.2);
 
 // Lists with mixed types
 numbers := [1, 2, 3];
-nodes := [@"X", @"Y", @"Z"];
+nodes := ["X", "Y", "Z"];
 
 // Queue construction
 q := queue [1, 2, 3, 4];
 
 // Add operations
-g2 := addNode(g, @"D");
-g3 := addEdge(g2, @"B", @"D", 1.8);
+g2 := addNode(g, "D");
+g3 := addEdge(g2, "B", "D", 1.8);
 
 print x;
 print y;

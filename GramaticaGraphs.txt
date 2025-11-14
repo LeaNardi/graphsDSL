@@ -1,4 +1,5 @@
 comm ::=  skip
+        | comm ; comm
         | cond expr then comm else comm end
         | while expr do comm end
         | for identifier in expr do comm end
@@ -9,11 +10,8 @@ comm ::=  skip
 expr ::= condexpr
 
 
-
-
-
 condexpr ::= logicalexp ? expr : expr
-        | logicalexp
+           | logicalexp
 
 
 
