@@ -50,17 +50,18 @@ factor ::= number
         | identifier
         | graphexp
         | edgeexp
+        | queueexp
         | listexp
         | unary
         | ( expr )
 
-number ::= [0-9]+
+number ::= integer | float
 
 boolean ::= true | false
 
 string ::= " [^"]* "
 
-emptyliteral ::= emptyList | emptyQueue | emptyEdgeList
+emptyliteral ::= emptyList | emptyQueue
 
 identifier ::= [a-zA-Z][a-zA-Z0-9_]*
 
@@ -98,6 +99,8 @@ edgeassoc ::= ( expr , expr )
 edgeexp ::= edge ( expr , expr , expr )
 
 listexp ::= [ exprlist ]
+
+queueexp ::= queue [ exprlist ]
 
 exprlist ::= expr
         | expr , exprlist

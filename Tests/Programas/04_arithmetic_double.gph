@@ -1,0 +1,6 @@
+// Very simple arithmetic and print
+x := 5.2;
+y := x + 3;
+y := y + 2;
+print y;
+text := "This is a string"

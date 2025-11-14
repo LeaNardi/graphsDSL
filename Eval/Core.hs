@@ -148,34 +148,54 @@ evalExpr (ValuedGraph nodeList) = do
   where
     evalNodeEntry (nodeExpr, adjList) = do
       nodeVal <- evalExpr nodeExpr
-      case nodeVal of
-        NodeValue node -> do
-          adjVals <- mapM evalAdjEntry adjList
-          return (node, adjVals)
+      node <- case nodeVal of
+        NodeValue n -> return n
+        StringValue s -> return (Node s)  -- Auto-convert strings to nodes
         _ -> throw
+      adjVals <- mapM evalAdjEntry adjList
+      return (node, adjVals)
     evalAdjEntry (nodeExpr, weightExpr) = do
       nodeVal <- evalExpr nodeExpr
       weightVal <- evalExpr weightExpr
-      case (nodeVal, weightVal) of
-        (NodeValue node, FloatValue weight) -> return (node, weight)
-        (NodeValue node, IntValue weight) -> return (node, fromInteger weight)  -- Convert Int to Float
+      node <- case nodeVal of
+        NodeValue n -> return n
+        StringValue s -> return (Node s)  -- Auto-convert strings to nodes
         _ -> throw
+      weight <- case weightVal of
+        FloatValue w -> return w
+        IntValue w -> return (fromInteger w)  -- Convert Int to Float
+        _ -> throw
+      return (node, weight)
 
 evalExpr (ValuedEdge n1Expr n2Expr wExpr) = do
   n1Val <- evalExpr n1Expr
   n2Val <- evalExpr n2Expr
   wVal <- evalExpr wExpr
-  case (n1Val, n2Val, wVal) of
-    (NodeValue n1, NodeValue n2, FloatValue w) -> return (EdgeValue (Edge n1 n2 w))
-    (NodeValue n1, NodeValue n2, IntValue w) -> return (EdgeValue (Edge n1 n2 (fromInteger w)))  -- Convert Int to Float
+  n1 <- case n1Val of
+    NodeValue n -> return n
+    StringValue s -> return (Node s)  -- Auto-convert strings to nodes
     _ -> throw
+  n2 <- case n2Val of
+    NodeValue n -> return n
+    StringValue s -> return (Node s)  -- Auto-convert strings to nodes
+    _ -> throw
+  w <- case wVal of
+    FloatValue f -> return f
+    IntValue i -> return (fromInteger i)  -- Convert Int to Float
+    _ -> throw
+  return (EdgeValue (Edge n1 n2 w))
 
 -- Simple function calls (minimal implementation for academic purposes)
 evalExpr (FunCall AddNode [graphExpr, nodeExpr]) = do
   graphVal <- evalExpr graphExpr
   nodeVal <- evalExpr nodeExpr
-  case (graphVal, nodeVal) of
-    (GraphValue graph, NodeValue node) -> return (GraphValue (addNode node graph))
+  case graphVal of
+    GraphValue graph -> do
+      node <- case nodeVal of
+        NodeValue n -> return n
+        StringValue s -> return (Node s)  -- Auto-convert strings to nodes
+        _ -> throw
+      return (GraphValue (addNode node graph))
     _ -> throw
 
 evalExpr (FunCall AddEdge [graphExpr, node1Expr, node2Expr, weightExpr]) = do
@@ -183,11 +203,22 @@ evalExpr (FunCall AddEdge [graphExpr, node1Expr, node2Expr, weightExpr]) = do
   node1Val <- evalExpr node1Expr
   node2Val <- evalExpr node2Expr
   weightVal <- evalExpr weightExpr
-  case (graphVal, node1Val, node2Val, weightVal) of
-    (GraphValue graph, NodeValue node1, NodeValue node2, FloatValue weight) -> 
+  case graphVal of
+    GraphValue graph -> do
+      node1 <- case node1Val of
+        NodeValue n -> return n
+        StringValue s -> return (Node s)  -- Auto-convert strings to nodes
+        _ -> throw
+      node2 <- case node2Val of
+        NodeValue n -> return n
+        StringValue s -> return (Node s)  -- Auto-convert strings to nodes
+        _ -> throw
+      weight <- case weightVal of
+        FloatValue w -> return w
+        IntValue i -> return (fromInteger i)  -- Convert Int to Float
+        _ -> throw
       return (GraphValue (addEdge node1 node2 weight graph))
-    (GraphValue graph, NodeValue node1, NodeValue node2, IntValue weight) -> 
-      return (GraphValue (addEdge node1 node2 (fromInteger weight) graph))
+    _ -> throw
     _ -> throw
 
 -- Lists and Queues

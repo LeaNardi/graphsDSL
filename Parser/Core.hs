@@ -1,7 +1,7 @@
 module Parser.Core where
 
 import Text.ParserCombinators.Parsec ( chainl1, sepBy, (<|>), try, Parser, option, many )
-import Text.Parsec.Token ( GenTokenParser( integer, reserved, identifier, brackets, parens, stringLiteral, reservedOp, comma) )
+import Text.Parsec.Token ( GenTokenParser( integer, reserved, identifier, brackets, parens, stringLiteral, reservedOp, comma), float )
 import Data.Functor (($>))
 
 import Parser.Lexer ( gdsl )
@@ -104,27 +104,14 @@ parseNumber :: Parser Expr
 parseNumber = try parseFloat <|> parseInt
   where
     parseInt = IntLit <$> integer gdsl
-    parseFloat = do
-      intPart <- integer gdsl
-      reservedOp gdsl "."
-      fracPart <- integer gdsl
-      let floatVal = fromInteger intPart + fromInteger fracPart / (10 ^ length (show fracPart))
-      return $ FloatLit floatVal
+    parseFloat = FloatLit . realToFrac <$> float gdsl
 
 parseBool :: Parser Expr
 parseBool = (reserved gdsl "true" $> BoolLit True)
          <|> (reserved gdsl "false" $> BoolLit False)
 
 parseString :: Parser Expr  
-parseString = try parseStringLit <|> parseNodeLit
-  where
-    -- String literals with quotes
-    parseStringLit = StringLit <$> stringLiteral gdsl
-    -- Node literals are strings prefixed with @
-    parseNodeLit = do
-      reservedOp gdsl "@"
-      nodeName <- stringLiteral gdsl
-      return $ NodeLit nodeName
+parseString = StringLit <$> stringLiteral gdsl  -- All string literals parse as StringLit
 
 parseEmptyLiterals :: Parser Expr
 parseEmptyLiterals = (reserved gdsl "emptyList" $> EmptyList)
