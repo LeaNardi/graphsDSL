@@ -10,14 +10,12 @@ import ASTGraphs ( Expr(..), Comm(..), BinOpType(..), CompOpType(..), FunctionTy
 -- MAIN PARSERS
 -- ============
 
--- Parse complete program (commands)
 parseComm :: Parser Comm
 parseComm = do
   first <- parseSimpleComm
   rest <- many (reservedOp gdsl ";" >> parseSimpleComm)
   return $ foldl Seq first rest
 
--- Parse individual commands
 parseSimpleComm :: Parser Comm
 parseSimpleComm = try parseSkip
                <|> try parseCond
@@ -26,23 +24,23 @@ parseSimpleComm = try parseSkip
                <|> try parsePrint
                <|> try parseAssignment
 
--- EXPRESSION PARSER (much simpler now!)
+-- EXPRESSION PARSER
 -- =====================================
 
--- Parse any expression - this is the key simplification!
+-- Parse any expression
 parseExpr :: Parser Expr
-parseExpr = parseConditional
+parseExpr = try parseConditional
+          <|> try parseLogical
 
 -- Conditional expressions (? :)
 parseConditional :: Parser Expr
-parseConditional = 
-  try (do cond <- parseLogical
-          reservedOp gdsl "?"
-          thenExpr <- parseExpr
-          reservedOp gdsl ":"
-          elseExpr <- parseExpr
-          return $ Question cond thenExpr elseExpr)
-  <|> parseLogical
+parseConditional = do cond <- parseLogical
+                      reservedOp gdsl "?"
+                      thenExpr <- parseExpr
+                      reservedOp gdsl ":"
+                      elseExpr <- parseExpr
+                      return $ Question cond thenExpr elseExpr
+  
 
 -- Logical operations (&&, ||)
 parseLogical :: Parser Expr
@@ -53,16 +51,17 @@ parseLogical = do
                     <*> parseComparison)
   return $ foldl (\acc (op, right) -> op acc right) left rest
 
--- Comparison operations (==, <, >, etc.)
+
 parseComparison :: Parser Expr
-parseComparison = do
+parseComparison = try (do
   left <- parseArithmetic
-  rest <- many ((,) <$> ((reservedOp gdsl "==" $> Comparison Eq)
-                      <|> (reservedOp gdsl "<" $> Comparison Lt)
-                      <|> (reservedOp gdsl ">" $> Comparison Gt)
-                      <|> (reservedOp gdsl "=node" $> Comparison EqNode)) -- Special node comparison
-                    <*> parseArithmetic)
-  return $ foldl (\acc (op, right) -> op acc right) left rest
+  op <- (reservedOp gdsl "==" $> Comparison Eq)
+    <|> (reservedOp gdsl "<" $> Comparison Lt)
+    <|> (reservedOp gdsl ">" $> Comparison Gt)
+    <|> (reservedOp gdsl "=node" $> Comparison EqNode)
+  right <- parseArithmetic
+  return $ op left right)
+                        <|> parseArithmetic
 
 -- Arithmetic operations (+, -, *, /, %)
 parseArithmetic :: Parser Expr
@@ -111,7 +110,7 @@ parseBool = (reserved gdsl "true" $> BoolLit True)
          <|> (reserved gdsl "false" $> BoolLit False)
 
 parseString :: Parser Expr  
-parseString = StringLit <$> stringLiteral gdsl  -- All string literals parse as StringLit
+parseString = StringLit <$> stringLiteral gdsl
 
 parseEmptyLiterals :: Parser Expr
 parseEmptyLiterals = (reserved gdsl "emptyList" $> EmptyList)
@@ -228,7 +227,7 @@ parseSkip = reserved gdsl "skip" $> Skip
 parseCond :: Parser Comm
 parseCond = do
   reserved gdsl "cond"
-  cond <- parseExpr  -- Any expression (evaluator will check it's boolean)
+  cond <- parseExpr
   reserved gdsl "then"
   trueBranch <- parseComm
   reserved gdsl "else"
@@ -239,7 +238,7 @@ parseCond = do
 parseWhile :: Parser Comm
 parseWhile = do
   reserved gdsl "while"
-  cond <- parseExpr  -- Any expression
+  cond <- parseExpr
   reserved gdsl "do"
   body <- parseComm
   reserved gdsl "end"
@@ -250,7 +249,7 @@ parseFor = do
   reserved gdsl "for"
   var <- identifier gdsl
   reserved gdsl "in"
-  list <- parseExpr  -- Any expression (evaluator will check it's a list)
+  list <- parseExpr
   reserved gdsl "do"
   body <- parseComm
   reserved gdsl "end"
@@ -259,12 +258,12 @@ parseFor = do
 parsePrint :: Parser Comm
 parsePrint = do
   reserved gdsl "print"
-  expr <- parseExpr  -- Any expression can be printed
+  expr <- parseExpr
   return $ Print expr
 
 parseAssignment :: Parser Comm
 parseAssignment = do
   var <- identifier gdsl
   reservedOp gdsl ":="
-  expr <- parseExpr  -- Any expression! Much simpler than before
+  expr <- parseExpr
   return $ AssignValue var expr

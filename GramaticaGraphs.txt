@@ -7,12 +7,11 @@ comm ::=  skip
         | identifier := expr
 
 
-expr ::= condexpr
+expr ::=  condexpr
+        | logicalexp
 
 
 condexpr ::= logicalexp ? expr : expr
-           | logicalexp
-
 
 
 logicalexp ::= comparisonexp
@@ -26,7 +25,6 @@ comparisonexp ::= arithmeticexp
                 | comparisonexp < arithmeticexp
                 | comparisonexp > arithmeticexp
                 | comparisonexp =node arithmeticexp
-
 
 
 
@@ -65,21 +63,6 @@ identifier ::= [a-zA-Z][a-zA-Z0-9_]*
 
 unary ::= - factor | ! factor
 
-
-functioncall ::= functionname ( arglist )
-
-functionname ::= addNode | deleteNode | addEdge | deleteEdge
-        | complement | union | intersection | getEdges | adjacentNodes
-        | getWeight | getNode1 | getNode2
-        | len | head | tail | add | sortByWeight | headEdge | tailEdges
-        | queueLen | enqueue | dequeue | dequeueNode | isEmpty
-        | unionFind | find
-        | esCiclico | esConexo | inList | isEmptyList
-
-arglist ::= expr
-        | expr , arglist
-        | ε
-
 graphexp ::= graph [ nodelist ]
 
 nodelist ::= nodeassoc
@@ -102,4 +85,18 @@ queueexp ::= queue [ exprlist ]
 
 exprlist ::= expr
         | expr , exprlist
+        | ε
+
+functioncall ::= functionname ( arglist )
+
+functionname ::= addNode | deleteNode | addEdge | deleteEdge
+        | complement | union | intersection | getEdges | adjacentNodes
+        | getWeight | getNode1 | getNode2
+        | len | head | tail | add | sortByWeight | headEdge | tailEdges
+        | queueLen | enqueue | dequeue | dequeueNode | isEmpty
+        | unionFind | find
+        | esCiclico | esConexo | inList | isEmptyList
+
+arglist ::= expr
+        | expr , arglist
         | ε
