@@ -1,0 +1,71 @@
+-- GraphsDSL Example
+-- This file demonstrates syntax highlighting
+
+-- Variable assignment
+x := 5;
+y := 10;
+flag := true;
+
+-- Arithmetic and comparisons
+result := (x + y) * 2;
+isGreater := x > 3;
+
+-- Logical operations
+condition := flag && (x > 30);
+
+-- Strings and nodes
+name := "NodeA";
+
+-- Graph construction
+g := graph[
+  ("A", [("B", 1), ("C", 2)]),
+  ("B", [("C", 3)]),
+  ("C", [])
+];
+
+-- Edge construction
+e := edge("A", "B", 5);
+
+-- List construction
+myList := [1, 2, 3, 4, 5];
+
+-- Queue construction
+myQueue := queue["first", "second", "third"];
+
+-- Conditional
+cond x > 5 then
+  print "x is greater than 5"
+else
+  print "x is 5 or less"
+end;
+
+-- While loop
+counter := 0;
+while counter < 10 do
+  counter := counter + 1;
+  print counter
+end;
+
+-- For loop
+for item in myList do
+  print item
+end;
+
+-- Function calls
+nodes := adjacentNodes(g, "A");
+weight := getWeight(e);
+length := len(myList);
+isCyclic := esCiclico(g);
+isConnected := esConexo(g);
+
+-- Graph operations
+g2 := addNode(g, "D");
+g3 := addEdge(g2, edge("D", "A", 1));
+edges := getEdges(g3);
+
+-- Ternary operator
+max := x > y ? x : y;
+
+-- Empty literals
+emptyL := emptyList;
+emptyQ := emptyQueue;
