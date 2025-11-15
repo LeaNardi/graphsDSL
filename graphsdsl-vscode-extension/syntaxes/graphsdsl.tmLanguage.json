@@ -32,8 +32,13 @@
     "comments": {
       "patterns": [
         {
-          "name": "comment.line.double-dash.graphsdsl",
-          "match": "--.*$"
+          "name": "comment.line.double-slash.graphsdsl",
+          "match": "//.*$"
+        },
+        {
+          "name": "comment.block.graphsdsl",
+          "begin": "/\\*",
+          "end": "\\*/"
         }
       ]
     },
