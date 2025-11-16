@@ -1,6 +1,6 @@
 module Eval.Core ( evalComm, evalExpr ) where
 
-import ASTGraphs ( Comm(..), Expr(..), BinOpType(..), CompOpType(..), FunctionType(..), Value(..), Graph(..), Node, Edge(..), Queue(..) )
+import ASTGraphs ( Comm(..), Expr(..), BinOpType(..), CompOpType(..), FunctionType(..), Value(..), Graph(..), Node, Edge(..), Queue(..), UnionFind(..) )
 import Eval.MonadClasses ( MonadError(..), MonadState(lookfor, update), MonadTick(..) )
 import Eval.Utils ( addNode, addEdge )
 import Control.Monad ( when )
@@ -228,6 +228,146 @@ evalExpr (ListConstruct exprs) = do
 evalExpr (QueueConstruct exprs) = do
   vals <- mapM evalExpr exprs
   return (QueueValue (Queue vals))
+
+evalExpr (UnionFindConstruct pairs) = do
+  ufPairs <- mapM evalPair pairs
+  return (UnionFindValue (UnionFind ufPairs))
+  where
+    evalPair (nodeExpr, parentExpr) = do
+      nodeVal <- evalExpr nodeExpr
+      parentVal <- evalExpr parentExpr
+      -- Convert to nodes (strings)
+      let node = case nodeVal of
+                   NodeValue n -> n
+                   StringValue s -> s
+                   _ -> error "UnionFind elements must be nodes or strings"
+      let parent = case parentVal of
+                     NodeValue n -> n
+                     StringValue s -> s
+                     _ -> error "UnionFind parents must be nodes or strings"
+      return (node, parent)
+
+-- Edge operations
+evalExpr (FunCall GetNode1 [edgeExpr]) = do
+  edgeVal <- evalExpr edgeExpr
+  case edgeVal of
+    EdgeValue (Edge n1 _ _) -> return (NodeValue n1)
+    _ -> throw
+
+evalExpr (FunCall GetNode2 [edgeExpr]) = do
+  edgeVal <- evalExpr edgeExpr
+  case edgeVal of
+    EdgeValue (Edge _ n2 _) -> return (NodeValue n2)
+    _ -> throw
+
+evalExpr (FunCall GetWeight [edgeExpr]) = do
+  edgeVal <- evalExpr edgeExpr
+  case edgeVal of
+    EdgeValue (Edge _ _ w) -> return (FloatValue w)
+    _ -> throw
+
+-- Graph operations
+evalExpr (FunCall GetEdges [graphExpr]) = do
+  graphVal <- evalExpr graphExpr
+  case graphVal of
+    GraphValue (Graph adjList) -> do
+      let edges = [(n1, n2, w) | (n1, neighbors) <- adjList, (n2, w) <- neighbors]
+      let edgeValues = [EdgeValue (Edge n1 n2 w) | (n1, n2, w) <- edges]
+      return (ListValue edgeValues)
+    _ -> throw
+
+-- List operations
+evalExpr (FunCall HeadList [listExpr]) = do
+  listVal <- evalExpr listExpr
+  case listVal of
+    ListValue (x:_) -> return x
+    ListValue [] -> throw  -- Error: head of empty list
+    _ -> throw
+
+evalExpr (FunCall TailList [listExpr]) = do
+  listVal <- evalExpr listExpr
+  case listVal of
+    ListValue (_:xs) -> return (ListValue xs)
+    ListValue [] -> throw  -- Error: tail of empty list
+    _ -> throw
+
+evalExpr (FunCall Len [listExpr]) = do
+  listVal <- evalExpr listExpr
+  case listVal of
+    ListValue xs -> return (IntValue (fromIntegral (length xs)))
+    _ -> throw
+
+evalExpr (FunCall SortByWeight [listExpr]) = do
+  listVal <- evalExpr listExpr
+  case listVal of
+    ListValue edges -> do
+      let sortedEdges = sortByEdgeWeight edges
+      return (ListValue sortedEdges)
+    _ -> throw
+  where
+    sortByEdgeWeight :: [Value] -> [Value]
+    sortByEdgeWeight values = 
+      let edges = [(e, w) | EdgeValue e@(Edge _ _ w) <- values]
+          sorted = map fst $ sortBy (\(_, w1) (_, w2) -> compare w1 w2) edges
+      in map EdgeValue sorted
+    sortBy :: (a -> a -> Ordering) -> [a] -> [a]
+    sortBy _ [] = []
+    sortBy cmp (x:xs) = 
+      let smaller = sortBy cmp [a | a <- xs, cmp a x == LT]
+          larger = sortBy cmp [a | a <- xs, cmp a x /= LT]
+      in smaller ++ [x] ++ larger
+
+-- UnionFind operations
+evalExpr (FunCall Find [nodeExpr, ufExpr]) = do
+  nodeVal <- evalExpr nodeExpr
+  ufVal <- evalExpr ufExpr
+  case (nodeVal, ufVal) of
+    (_, UnionFindValue (UnionFind pairs)) -> do
+      let node = case nodeVal of
+                   NodeValue n -> n
+                   StringValue s -> s
+                   _ -> error "Find requires a node or string"
+      let root = findRoot node pairs
+      return (NodeValue root)
+    _ -> throw
+  where
+    findRoot :: Node -> [(Node, Node)] -> Node
+    findRoot node pairs =
+      case lookup node pairs of
+        Just parent | parent == node -> node  -- Found root
+        Just parent -> findRoot parent pairs  -- Keep searching
+        Nothing -> error $ "Node not found in UnionFind: " ++ node
+
+evalExpr (FunCall Union [node1Expr, node2Expr, ufExpr]) = do
+  node1Val <- evalExpr node1Expr
+  node2Val <- evalExpr node2Expr
+  ufVal <- evalExpr ufExpr
+  case (node1Val, node2Val, ufVal) of
+    (_, _, UnionFindValue (UnionFind pairs)) -> do
+      let node1 = case node1Val of
+                    NodeValue n -> n
+                    StringValue s -> s
+                    _ -> error "Union requires nodes or strings"
+      let node2 = case node2Val of
+                    NodeValue n -> n
+                    StringValue s -> s
+                    _ -> error "Union requires nodes or strings"
+      let root1 = findRoot node1 pairs
+      let root2 = findRoot node2 pairs
+      if root1 == root2
+        then return (UnionFindValue (UnionFind pairs))  -- Already in same set
+        else do
+          -- Union by making root1 point to root2
+          let newPairs = map (\(n, p) -> if n == root1 then (n, root2) else (n, p)) pairs
+          return (UnionFindValue (UnionFind newPairs))
+    _ -> throw
+  where
+    findRoot :: Node -> [(Node, Node)] -> Node
+    findRoot node pairs =
+      case lookup node pairs of
+        Just parent | parent == node -> node
+        Just parent -> findRoot parent pairs
+        Nothing -> error $ "Node not found in UnionFind: " ++ node
 
 -- Default case for unimplemented function calls
 evalExpr (FunCall _ _) = throw

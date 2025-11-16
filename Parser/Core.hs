@@ -93,6 +93,7 @@ parseFactor = try parseNumber
            <|> try parseValuedEdge
            <|> try parseQueue
            <|> try parseList
+           <|> try parseUnionFind
            <|> try parseUnary
            <|> parseParens
 
@@ -167,7 +168,7 @@ parseFunction = do
     "isEmpty" -> return $ FunCall IsEmptyQueue args
     
     -- UnionFind operations
-    "unionFind" -> return $ FunCall Union args
+    "union" -> return $ FunCall Union args
     "find" -> return $ FunCall Find args
     
     -- Boolean predicates  
@@ -217,6 +218,18 @@ parseQueue = do
   reserved gdsl "queue"
   elements <- brackets gdsl $ sepBy parseExpr (comma gdsl)
   return $ QueueConstruct elements
+
+parseUnionFind :: Parser Expr
+parseUnionFind = do
+  reserved gdsl "unionfind"
+  pairs <- brackets gdsl $ sepBy parseUFPair (comma gdsl)
+  return $ UnionFindConstruct pairs
+  where
+    parseUFPair = parens gdsl $ do
+      node <- parseExpr
+      comma gdsl
+      parent <- parseExpr
+      return (node, parent)
 
 -- COMMAND PARSERS
 -- ===============

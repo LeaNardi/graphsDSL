@@ -16,6 +16,7 @@ data Value = IntValue Integer
            | GraphValue Graph
            | ListValue [Value]      -- Generic list (can hold any values)
            | QueueValue Queue
+           | UnionFindValue UnionFind
  deriving (Show, Eq)
 
 -- Core data types for runtime values (unchanged)
@@ -23,6 +24,7 @@ data Graph = Graph [(Node, [(Node, Weight)])] deriving (Show, Eq)
 type Node = String
 data Edge = Edge Node Node Weight deriving (Show, Eq)
 data Queue = Queue [Value] deriving (Show, Eq)
+data UnionFind = UnionFind [(Node, Node)] deriving (Show, Eq)  -- (element, parent)
 
 -- UNTYPED AST - Single Expression type
 data Expr = 
@@ -59,6 +61,7 @@ data Expr =
   -- Collections
   | ListConstruct [Expr]                  -- Generic list constructor
   | QueueConstruct [Expr]                 -- Queue constructor
+  | UnionFindConstruct [(Expr, Expr)]                 -- UnionFind constructor
   
  deriving (Show, Eq)
 
