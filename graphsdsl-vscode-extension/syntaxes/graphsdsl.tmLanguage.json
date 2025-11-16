@@ -50,7 +50,7 @@
         },
         {
           "name": "keyword.other.graphsdsl",
-          "match": "\\b(graph|edge|queue|emptyList|emptyQueue)\\b"
+          "match": "\\b(graph|edge|queue|unionfind|emptyList|emptyQueue)\\b"
         }
       ]
     },
@@ -84,32 +84,56 @@
           "match": ":="
         },
         {
+          "name": "keyword.operator.arrow.graphsdsl",
+          "match": "->"
+        },
+        {
           "name": "keyword.operator.comparison.graphsdsl",
           "match": "(==|<|>|=node)"
         },
         {
           "name": "keyword.operator.logical.graphsdsl",
-          "match": "(&&|\\|\\|)"
+          "match": "(&&|\\|\\||!|~)"
         },
         {
           "name": "keyword.operator.arithmetic.graphsdsl",
           "match": "[+\\-*/%]"
         },
         {
-          "name": "keyword.operator.unary.graphsdsl",
-          "match": "!"
-        },
-        {
           "name": "keyword.operator.ternary.graphsdsl",
           "match": "[?:]"
+        },
+        {
+          "name": "keyword.operator.separator.graphsdsl",
+          "match": "[;|&]"
         }
       ]
     },
     "functions": {
       "patterns": [
         {
-          "name": "entity.name.function.graphsdsl",
-          "match": "\\b(addNode|deleteNode|addEdge|deleteEdge|complement|union|intersection|getEdges|adjacentNodes|getWeight|getNode1|getNode2|len|head|tail|add|sortByWeight|headEdge|tailEdges|queueLen|enqueue|dequeue|dequeueNode|isEmpty|unionFind|find|esCiclico|esConexo|inList|isEmptyList)\\b"
+          "name": "entity.name.function.graph.graphsdsl",
+          "match": "\\b(addNode|deleteNode|addEdge|deleteEdge|complement|graphUnion|intersection|getEdges|adjacentNodes)\\b"
+        },
+        {
+          "name": "entity.name.function.edge.graphsdsl",
+          "match": "\\b(getWeight|getNode1|getNode2)\\b"
+        },
+        {
+          "name": "entity.name.function.list.graphsdsl",
+          "match": "\\b(len|head|tail|add|sortByWeight|headEdge|tailEdges|inList|isEmptyList)\\b"
+        },
+        {
+          "name": "entity.name.function.queue.graphsdsl",
+          "match": "\\b(queueLen|enqueue|dequeue|dequeueNode|isEmpty)\\b"
+        },
+        {
+          "name": "entity.name.function.unionfind.graphsdsl",
+          "match": "\\b(union|find)\\b"
+        },
+        {
+          "name": "entity.name.function.predicate.graphsdsl",
+          "match": "\\b(esCiclico|esConexo)\\b"
         }
       ]
     },
