@@ -96,6 +96,7 @@ data FunctionType =
   
   -- Boolean predicates
   | EsCiclico | EsConexo | InList | IsEmptyList
+  | IsValidUndirectedGraph  -- Check if graph has symmetric edges
   
  deriving (Show, Eq)
 

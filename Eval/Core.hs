@@ -6,6 +6,16 @@ import Eval.Utils ( addNode, addEdge )
 import Control.Monad ( when )
 import Data.List (intersect)
 
+-- Helper function to validate undirected graphs have symmetric edges
+-- Checks that for every edge (n1, n2, w), there exists a reverse edge (n2, n1, w)
+checkUndirectedGraph :: [(Node, [(Node, Float)])] -> Bool
+checkUndirectedGraph adjList = all checkEdge allEdges
+  where
+    allEdges = [(n1, n2, w) | (n1, neighbors) <- adjList, (n2, w) <- neighbors]
+    checkEdge (n1, n2, w) = 
+      case lookup n2 adjList of
+        Nothing -> False  -- n2 not in graph
+        Just neighbors -> (n1, w) `elem` neighbors  -- Check if reverse edge exists with same weight
 
 evalComm :: (MonadState m, MonadError m, MonadTick m) => Comm -> m ()
 evalComm Skip = return ()
@@ -106,6 +116,7 @@ evalExpr (Comparison op l r) = do
       (FloatValue l', FloatValue r') -> return (BoolValue (l' == r'))
       (BoolValue l', BoolValue r') -> return (BoolValue (l' == r'))
       (StringValue l', StringValue r') -> return (BoolValue (l' == r'))
+      (NodeValue l', NodeValue r') -> return (BoolValue (l' == r'))
       _ -> throw
     Lt -> case (lval, rval) of
       (IntValue l', IntValue r') -> return (BoolValue (l' < r'))
@@ -144,7 +155,10 @@ evalExpr (Question cond thenE elseE) = do
 -- Complex constructors
 evalExpr (ValuedGraph nodeList) = do
   graph <- mapM evalNodeEntry nodeList
-  return (GraphValue (Graph graph))
+  -- Automatically validate that the graph has symmetric edges (undirected graph)
+  if not (checkUndirectedGraph graph)
+    then error "Invalid undirected graph: edges must be symmetric (if A->B exists, B->A must exist with same weight)"
+    else return (GraphValue (Graph graph))
   where
     evalNodeEntry (nodeExpr, adjList) = do
       nodeVal <- evalExpr nodeExpr
@@ -271,8 +285,11 @@ evalExpr (FunCall GetEdges [graphExpr]) = do
   graphVal <- evalExpr graphExpr
   case graphVal of
     GraphValue (Graph adjList) -> do
-      let edges = [(n1, n2, w) | (n1, neighbors) <- adjList, (n2, w) <- neighbors]
-      let edgeValues = [EdgeValue (Edge n1 n2 w) | (n1, n2, w) <- edges]
+      -- Get all edges from adjacency list
+      let allEdges = [(n1, n2, w) | (n1, neighbors) <- adjList, (n2, w) <- neighbors]
+      -- For undirected graphs, remove duplicates (keep only n1 < n2)
+      let uniqueEdges = [(n1, n2, w) | (n1, n2, w) <- allEdges, n1 < n2]
+      let edgeValues = [EdgeValue (Edge n1 n2 w) | (n1, n2, w) <- uniqueEdges]
       return (ListValue edgeValues)
     _ -> throw
 
