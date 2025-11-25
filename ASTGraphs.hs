@@ -3,108 +3,108 @@ module ASTGraphs where
 -- Alias
 type Variable = String
 type Env = [(Variable, Value)] -- Podria moverse a Eval/StateErrorTick.hs
-type Weight = Float  -- Changed to Float for more flexibility
+type Weight = Float
 type Ticks = Integer -- Podria moverse a Eval/StateErrorTick.hs
 
 -- Runtime Values -- No se usa en Parser, se usa en Eval
 data Value = IntValue Integer
-           | FloatValue Float        -- Added Float support
-           | BoolValue Bool         -- Added Bool support (separate from Int)
-           | StringValue String     -- Added String support (separate from Node)
+           | FloatValue Float
+           | BoolValue Bool
+           | StringValue String
            | NodeValue Node
            | EdgeValue Edge
            | GraphValue Graph
-           | ListValue [Value]      -- Generic list (can hold any values)
+           | ListValue [Value]
            | QueueValue Queue
            | UnionFindValue UnionFind
  deriving (Show, Eq)
 
--- Core data types for runtime values (unchanged)
+-- Tipos de datos especificos
 data Graph = Graph [(Node, [(Node, Weight)])] deriving (Show, Eq)
 type Node = String
 data Edge = Edge Node Node Weight deriving (Show, Eq)
 data Queue = Queue [Value] deriving (Show, Eq)
 data UnionFind = UnionFind [(Node, Node)] deriving (Show, Eq)  -- (element, parent)
 
--- UNTYPED AST - Single Expression type
+-- Expresion generica
 data Expr = 
-    -- Literals
+    -- Literales
     IntLit Integer
-  | FloatLit Float       -- Added Float literals
+  | FloatLit Float
   | BoolLit Bool
-  | StringLit String     -- Added String literals (separate from NodeLit)
-  | NodeLit String       -- Node literals (for graph nodes)
+  | StringLit String
+  | NodeLit String
   | EmptyList
   | EmptyQueue
   
   -- Variables
   | Var Variable
   
-  -- Arithmetic Operations
+  -- Operaciones Aritmeticas
   | UMinus Expr
   | BinOp BinOpType Expr Expr
   
-  -- Boolean Operations
+  -- Operaciones Booleanas
   | Not Expr
   | Comparison CompOpType Expr Expr
   
-  -- Conditional Expression
+  -- Expresiones Condicionales
   | Question Expr Expr Expr  -- condition ? then : else
   
-  -- Function/Method calls (covers all operations)
+  -- Llamadas a Funciones
   | FunCall FunctionType [Expr]
   
-  -- Complex constructors
+  -- Constructores de grafos
   | ValuedGraph [(Expr, [(Expr, Expr)])]  -- [(node, [(node, weight)])]
   | ValuedEdge Expr Expr Expr             -- node1 node2 weight
   
-  -- Collections
-  | ListConstruct [Expr]                  -- Generic list constructor
-  | QueueConstruct [Expr]                 -- Queue constructor
-  | UnionFindConstruct [(Expr, Expr)]                 -- UnionFind constructor
+  -- Colecciones
+  | ListConstruct [Expr]
+  | QueueConstruct [Expr]
+  | UnionFindConstruct [(Expr, Expr)]
   
  deriving (Show, Eq)
 
--- Binary arithmetic operations
+  -- Operaciones Aritmeticas binarias
 data BinOpType = Plus | Minus | Times | Div | Mod
  deriving (Show, Eq)
 
--- Comparison operations
+-- Operaciones de comparacion
 data CompOpType = Eq | Lt | Gt | And | Or | EqNode
  deriving (Show, Eq)
 
--- Function/Method types - represents all operations as function calls
+-- Funciones
 data FunctionType = 
-    -- Graph operations
+    -- Operaciones de grafos
     AddNode | DeleteNode | AddEdge | DeleteEdge
   | GraphComplement | GraphUnion | GraphIntersection
   | GetEdges | AdjacentNodes
   
-  -- Edge operations  
+  -- Operaciones sobre aristas
   | GetWeight | GetNode1 | GetNode2
   
-  -- List operations
+  -- Operaciones de List
   | Len | TailList | AddList | HeadList
   | SortByWeight | TailEdges | HeadEdge
   
-  -- Queue operations
+  -- Operaciones de Queue
   | QueueLen | Enqueue | Dequeue | DequeueNode
   | IsEmptyQueue
   
-  -- UnionFind operations
+  -- Operaciones de UnionFind
   | Union | Find
   
-  -- Boolean predicates
+  -- Booleanos
   | EsCiclico | EsConexo | InList | IsEmptyList
   
  deriving (Show, Eq)
 
--- Commands (largely unchanged, but using untyped expressions)
+-- Commandos
 data Comm = Skip
           | Seq Comm Comm
-          | AssignValue Variable Expr  -- Now takes any expression
-          | Cond Expr Comm Comm     -- Condition is just an expression
-          | While Expr Comm         -- Condition is just an expression
-          | For Variable Expr Comm  -- List expression is just an expression
-          | Print Expr              -- Any expression can be printed
+          | AssignValue Variable Expr
+          | Cond Expr Comm Comm
+          | While Expr Comm
+          | For Variable Expr Comm
+          | Print Expr
  deriving (Show, Eq)

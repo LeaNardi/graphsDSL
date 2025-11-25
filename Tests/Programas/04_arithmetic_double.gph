@@ -1,4 +1,4 @@
-// Very simple arithmetic and print
+// Aritmetico con tipo double
 x := 5.2;
 y := x + 3;
 y := y + 2;

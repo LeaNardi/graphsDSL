@@ -1,8 +1,7 @@
 module Eval.Core ( evalComm, evalExpr ) where
 
-import ASTGraphs ( Comm(..), Expr(..), BinOpType(..), CompOpType(..), FunctionType(..), Value(..), Graph(..), Node, Edge(..), Queue(..), UnionFind(..) )
+import ASTGraphs ( Comm(..), Expr(..), BinOpType(..), CompOpType(..), FunctionType(..), Value(..), Graph(..), Node, Edge(..), Queue(..), UnionFind(..), Weight )
 import Eval.MonadClasses ( MonadError(..), MonadState(lookfor, update), MonadTick(..) )
-import Eval.Utils ( addNode, addEdge )
 import Control.Monad ( when )
 import Data.List (intersect)
 
@@ -388,3 +387,20 @@ evalExpr (FunCall Union [node1Expr, node2Expr, ufExpr]) = do
 
 -- Default case for unimplemented function calls
 evalExpr (FunCall _ _) = throw
+
+
+
+addNode :: Node -> Graph -> Graph
+addNode n (Graph g)
+  | n `elem` map fst g = Graph g
+  | otherwise = Graph ((n, []) : g)
+
+addEdge :: Node -> Node -> Weight -> Graph -> Graph
+addEdge u v w g = addDirectedEdge v u w (addDirectedEdge u v w g)
+
+addDirectedEdge :: Node -> Node -> Weight -> Graph -> Graph
+addDirectedEdge u v w (Graph []) = Graph [(u, [(v , w)])]
+addDirectedEdge u v w (Graph ((node, nodesWeights) : otros))
+  | u == node = Graph ((node, (v, w) : nodesWeights) : otros)
+  | otherwise = case addDirectedEdge u v w (Graph otros) of
+                  Graph otros' -> Graph ((node, nodesWeights) : otros')

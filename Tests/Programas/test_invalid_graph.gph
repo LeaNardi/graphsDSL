@@ -1,5 +1,4 @@
-// Test automatic graph validation
-// This graph is invalid because edge A->B exists but B->A doesn't
+//Grafo no valido (por no tener correctamente la lista de adyacencia)
 
 g := graph [
     ("A", [("B", 1.0)]),

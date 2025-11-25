@@ -7,8 +7,8 @@ import Data.Functor (($>))
 import Parser.Lexer ( gdsl )
 import ASTGraphs ( Expr(..), Comm(..), BinOpType(..), CompOpType(..), FunctionType(..), Variable )
 
--- MAIN PARSERS
 -- ============
+-- parseComm
 
 parseComm :: Parser Comm
 parseComm = do
@@ -24,15 +24,13 @@ parseSimpleComm = try parseSkip
                <|> try parsePrint
                <|> try parseAssignment
 
--- EXPRESSION PARSER
 -- =====================================
+-- Parser de expresiones generales
 
--- Parse any expression
 parseExpr :: Parser Expr
 parseExpr = try parseConditional
           <|> try parseLogical
 
--- Conditional expressions (? :)
 parseConditional :: Parser Expr
 parseConditional = do cond <- parseLogical
                       reservedOp gdsl "?"
@@ -42,7 +40,6 @@ parseConditional = do cond <- parseLogical
                       return $ Question cond thenExpr elseExpr
   
 
--- Logical operations (&&, ||)
 parseLogical :: Parser Expr
 parseLogical = do
   left <- parseComparison
@@ -63,7 +60,6 @@ parseComparison = try (do
   return $ op left right)
                         <|> parseArithmetic
 
--- Arithmetic operations (+, -, *, /, %)
 parseArithmetic :: Parser Expr
 parseArithmetic = do
   left <- parseTerm
@@ -81,7 +77,6 @@ parseTerm = do
                     <*> parseFactor)
   return $ foldl (\acc (op, right) -> op acc right) left rest
 
--- Basic expressions (literals, variables, function calls, etc.)
 parseFactor :: Parser Expr
 parseFactor = try parseNumber
            <|> try parseBool
@@ -97,8 +92,8 @@ parseFactor = try parseNumber
            <|> try parseUnary
            <|> parseParens
 
--- LITERAL PARSERS
 -- ===============
+-- Parsers de literales
 
 parseNumber :: Parser Expr
 parseNumber = try parseFloat <|> parseInt
@@ -127,15 +122,15 @@ parseUnary :: Parser Expr
 parseUnary = (reservedOp gdsl "-" >> UMinus <$> parseFactor)
           <|> (reservedOp gdsl "!" >> Not <$> parseFactor)
 
--- FUNCTION CALLS (much simpler than separate expression types!)
 -- =============================================================
+-- Llamadas a funciones
 
 parseFunction :: Parser Expr
 parseFunction = do
   funName <- identifier gdsl
   args <- parens gdsl (sepBy parseExpr (comma gdsl))
   case funName of
-    -- Graph operations
+    -- Operaciones de grafos
     "addNode" -> return $ FunCall AddNode args
     "deleteNode" -> return $ FunCall DeleteNode args
     "addEdge" -> return $ FunCall AddEdge args
@@ -146,12 +141,12 @@ parseFunction = do
     "getEdges" -> return $ FunCall GetEdges args
     "adjacentNodes" -> return $ FunCall AdjacentNodes args
     
-    -- Edge operations
+    -- Operaciones sobre aristas
     "getWeight" -> return $ FunCall GetWeight args
     "getNode1" -> return $ FunCall GetNode1 args
     "getNode2" -> return $ FunCall GetNode2 args
     
-    -- List operations
+    -- Operaciones de List
     "len" -> return $ FunCall Len args
     "head" -> return $ FunCall HeadList args
     "tail" -> return $ FunCall TailList args
@@ -160,18 +155,18 @@ parseFunction = do
     "headEdge" -> return $ FunCall HeadEdge args
     "tailEdges" -> return $ FunCall TailEdges args
     
-    -- Queue operations
+    -- Operaciones de Queue
     "queueLen" -> return $ FunCall QueueLen args
     "enqueue" -> return $ FunCall Enqueue args
     "dequeue" -> return $ FunCall Dequeue args
     "dequeueNode" -> return $ FunCall DequeueNode args
     "isEmpty" -> return $ FunCall IsEmptyQueue args
     
-    -- UnionFind operations
+    -- Operaciones de UnionFind
     "union" -> return $ FunCall Union args
     "find" -> return $ FunCall Find args
     
-    -- Boolean predicates  
+    -- Booleanos
     "esCiclico" -> return $ FunCall EsCiclico args
     "esConexo" -> return $ FunCall EsConexo args
     "inList" -> return $ FunCall InList args
@@ -179,8 +174,8 @@ parseFunction = do
     
     _ -> fail $ "Unknown function: " ++ funName
 
--- COMPLEX CONSTRUCTORS  
 -- ====================
+-- Constructores de grafos
 
 parseValuedGraph :: Parser Expr
 parseValuedGraph = do
@@ -231,8 +226,8 @@ parseUnionFind = do
       parent <- parseExpr
       return (node, parent)
 
--- COMMAND PARSERS
 -- ===============
+-- Parsers de Comandos
 
 parseSkip :: Parser Comm
 parseSkip = reserved gdsl "skip" $> Skip

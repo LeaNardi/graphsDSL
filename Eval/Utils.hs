@@ -4,24 +4,6 @@ import ASTGraphs ( Edge(..), Graph(..), Node, Weight )
 import Data.List (sortBy)
 
 
-addNode :: Node -> Graph -> Graph
-addNode n (Graph g)
-  | n `elem` map fst g = Graph g
-  | otherwise = Graph ((n, []) : g)
-
-
-addDirectedEdge :: Node -> Node -> Weight -> Graph -> Graph
-addDirectedEdge u v w (Graph []) = Graph [(u, [(v , w)])]
-addDirectedEdge u v w (Graph ((node, nodesWeights) : otros))
-  | u == node = Graph ((node, (v, w) : nodesWeights) : otros)
-  | otherwise = case addDirectedEdge u v w (Graph otros) of
-                  Graph otros' -> Graph ((node, nodesWeights) : otros')
-
-
-addEdge :: Node -> Node -> Weight -> Graph -> Graph
-addEdge u v w g = addDirectedEdge v u w (addDirectedEdge u v w g)
-
-
 isUndirected :: Graph -> Bool
 isUndirected (Graph g) = all (\(u, nodesWeights) -> all (\(v, w) -> lookupWeight v u (Graph g) == Just w) nodesWeights) g
 

@@ -2,7 +2,7 @@ module Parser.Formatter where
 
 import ASTGraphs (Comm(..), Expr(..))
 
--- Format AST for prettier printing (keeps exact structure, just adds newlines and indentation)
+-- Solo agrega saltos de linea e indentacion
 formatAST :: Comm -> String
 formatAST = formatComm 0
 
