@@ -2,16 +2,10 @@ module Main where
 
 import System.Environment (getArgs)
 import Parser.Parser (parseGraphs)
+import Parser.Formatter (formatAST)
 -- import Eval.Eval (eval)
+-- import Eval.Formatter (formatEval)
 
-
--- Para compilar:
--- ghc Main.hs
--- Para ejecutar:
--- ./Main Tests/Programas/ejemplo_1.gph
-
--- Para ejecutar sin compilar:
--- runghc Main.hs Tests/Programas/ejemplo_1.gph
 
 main :: IO ()
 main = do args <- getArgs
@@ -21,34 +15,18 @@ main = do args <- getArgs
                                 Left err  -> putStrLn "Error de parseo:" >> print err
                                 Right ast -> do
                                     putStrLn "AST parseado:"
-                                    print ast
+                                    -- print ast
+                                    putStrLn (formatAST ast)
                                     putStrLn "\nResultado de la evaluación:"
                                     -- print (eval ast)
+                                    -- putStrLn (formatEval (eval ast))
             _          ->  putStrLn "Formato esperado: Main.hs Programas/ejemplo.gph"
 
 
+-- Para compilar:
+-- ghc Main.hs
+-- Para ejecutar:
+-- ./Main Tests/Programas/ejemplo_1.gph
 
--- Imprimir el resultado de forma más legible por pantalla
---run :: [Char] -> IO ()
---run ifile = do s <- readFile ifile
---               case parseGraphs ifile s of
---                 Left error -> print error
---                 Right ast -> let (env, ticks) = eval ast in
---                   case lookup "g" env of
---                      Just (Right gr) -> do putStrLn "Grafo resultante (MST):"
---                                            printGraph gr
---                                            putStrLn $ "Ticks: " ++ show ticks
---                      _ -> print env
-
---printGraph :: Graph -> IO ()
---printGraph (Graph adj) = mapM_ printAdj adj
---  where
---    printAdj (n, edges) = do
---        putStr (show n ++ " -> ")
---        putStrLn (show edges)
-
-
--- Hacer tests del AST...
--- Skip
--- Output
-
+-- Para ejecutar sin compilar:
+-- runghc Main.hs Tests/Programas/ejemplo_1.gph

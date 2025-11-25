@@ -1,0 +1,102 @@
+comm ::=  skip
+        | comm ; comm
+        | cond expr then comm else comm end
+        | while expr do comm end
+        | for identifier in expr do comm end
+        | print expr
+        | identifier := expr
+
+
+expr ::=  condexpr
+        | logicalexp
+
+
+condexpr ::= logicalexp ? expr : expr
+
+
+logicalexp ::= comparisonexp
+                | logicalexp && comparisonexp
+                | logicalexp || comparisonexp
+
+
+
+comparisonexp ::= arithmeticexp
+                | comparisonexp == arithmeticexp
+                | comparisonexp < arithmeticexp
+                | comparisonexp > arithmeticexp
+                | comparisonexp =node arithmeticexp
+
+
+
+arithmeticexp ::= term
+                | arithmeticexp + term
+                | arithmeticexp - term
+
+term ::= factor
+        | term * factor
+        | term / factor
+        | term % factor
+
+
+factor ::= number
+        | boolean
+        | string
+        | emptyliteral
+        | functioncall
+        | identifier
+        | graphexp
+        | edgeexp
+        | queueexp
+        | listexp
+        | unary
+        | ( expr )
+
+number ::= integer | float
+
+boolean ::= true | false
+
+string ::= " [^"]* "
+
+emptyliteral ::= emptyList | emptyQueue
+
+identifier ::= [a-zA-Z][a-zA-Z0-9_]*
+
+unary ::= - factor | ! factor
+
+graphexp ::= graph [ nodelist ]
+
+nodelist ::= nodeassoc
+        | nodeassoc , nodelist
+        | ε
+
+nodeassoc ::= ( expr , [ edgelist ] )
+
+edgelist ::= edgeassoc
+        | edgeassoc , edgelist
+        | ε
+
+edgeassoc ::= ( expr , expr )
+
+edgeexp ::= edge ( expr , expr , expr )
+
+listexp ::= [ exprlist ]
+
+queueexp ::= queue [ exprlist ]
+
+exprlist ::= expr
+        | expr , exprlist
+        | ε
+
+functioncall ::= functionname ( arglist )
+
+functionname ::= addNode | deleteNode | addEdge | deleteEdge
+        | complement | union | intersection | getEdges | adjacentNodes
+        | getWeight | getNode1 | getNode2
+        | len | head | tail | add | sortByWeight | headEdge | tailEdges
+        | queueLen | enqueue | dequeue | dequeueNode | isEmpty
+        | unionFind | find
+        | esCiclico | esConexo | inList | isEmptyList
+
+arglist ::= expr
+        | expr , arglist
+        | ε

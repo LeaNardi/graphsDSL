@@ -1,0 +1,109 @@
+// GraphsDSL Example
+// This file demonstrates syntax highlighting for all language features
+
+// Variable assignment
+x := 5;
+y := 10;
+flag := true;
+
+// Arithmetic and comparisons
+result := (x + y) * 2;
+isGreater := x > 3;
+
+// Logical operations
+condition := flag && (x > 30);
+notFlag := !flag;
+
+// Strings and nodes
+name := "NodeA";
+
+// Graph construction (undirected - edges must be symmetric)
+g := graph[
+  ("A", [("B", 1.0), ("C", 2.0)]),
+  ("B", [("A", 1.0), ("C", 3.0)]),
+  ("C", [("A", 2.0), ("B", 3.0)])
+];
+
+// Edge construction
+e := edge("A", "B", 5.0);
+
+// List construction
+myList := [1, 2, 3, 4, 5];
+edgeList := [edge("A", "B", 1.0), edge("B", "C", 2.0)];
+
+// Queue construction
+myQueue := queue["first", "second", "third"];
+
+// UnionFind construction (for Kruskal's algorithm)
+uf := unionfind[("A", "A"), ("B", "B"), ("C", "C")];
+
+// Conditional
+cond x > 5 then
+  print("x is greater than 5")
+else
+  print("x is 5 or less")
+end;
+
+// While loop
+counter := 0;
+while counter < 10 do
+  counter := counter + 1;
+  print(counter)
+end;
+
+// For loop
+for item in myList do
+  print(item)
+end;
+
+// Graph operations
+g2 := addNode(g, "D");
+g3 := addEdge(g2, edge("D", "A", 1.0));
+edges := getEdges(g3);
+neighbors := adjacentNodes(g, "A");
+g4 := graphUnion(g, g2);
+g5 := intersection(g, g2);
+
+// Edge operations
+weight := getWeight(e);
+node1 := getNode1(e);
+node2 := getNode2(e);
+
+// List operations
+length := len(myList);
+firstItem := head(myList);
+restItems := tail(myList);
+newList := add(myList, 6);
+sortedEdges := sortByWeight(edgeList);
+firstEdge := headEdge(edgeList);
+restEdges := tailEdges(edgeList);
+contains := inList(myList, 3);
+empty := isEmptyList([]);
+
+// Queue operations
+qLen := queueLen(myQueue);
+q2 := enqueue(myQueue, "fourth");
+dequeuedValue := dequeue(myQueue);
+dequeuedNode := dequeueNode(myQueue);
+qEmpty := isEmpty(myQueue);
+
+// UnionFind operations (for MST algorithms)
+root := find(uf, "A");
+uf2 := union(uf, "A", "B");
+
+// Boolean predicates
+isCyclic := esCiclico(g);
+isConnected := esConexo(g);
+
+// Ternary operator
+max := x > y ? x : y;
+
+// Empty literals
+emptyL := emptyList;
+emptyQ := emptyQueue;
+
+// Comment styles
+// Single line comment
+/* Multi-line
+   comment block */
+

@@ -1,98 +1,110 @@
 module ASTGraphs where
 
-
 -- Alias
 type Variable = String
-type Env = [(Variable, Value)]
-type Ticks = Integer
-type Value = Either Integer GraphExp
-type Weight = Integer
+type Env = [(Variable, Value)] -- Podria moverse a Eval/StateErrorTick.hs
+type Weight = Float
+type Ticks = Integer -- Podria moverse a Eval/StateErrorTick.hs
 
+-- Runtime Values -- No se usa en Parser, se usa en Eval
+data Value = IntValue Integer
+           | FloatValue Float
+           | BoolValue Bool
+           | StringValue String
+           | NodeValue Node
+           | EdgeValue Edge
+           | GraphValue Graph
+           | ListValue [Value]
+           | QueueValue Queue
+           | UnionFindValue UnionFind
+ deriving (Show, Eq)
 
--- Expresiones Aritmeticas
-data IntExp = Const Integer
-            | VarInt Variable
-            | UMinus IntExp
-            | Plus IntExp IntExp
-            | Minus IntExp IntExp
-            | Times IntExp IntExp
-            | Div IntExp IntExp
-            | Mod IntExp IntExp
-            | Question BoolExp IntExp IntExp
-            | GetWeight EdgeExp
-            | Len ListEdgeExp
- deriving (Show,Eq)
+-- Tipos de datos especificos
+data Graph = Graph [(Node, [(Node, Weight)])] deriving (Show, Eq)
+type Node = String
+data Edge = Edge Node Node Weight deriving (Show, Eq)
+data Queue = Queue [Value] deriving (Show, Eq)
+data UnionFind = UnionFind [(Node, Node)] deriving (Show, Eq)  -- (element, parent)
 
+-- Expresion generica
+data Expr = 
+    -- Literales
+    IntLit Integer
+  | FloatLit Float
+  | BoolLit Bool
+  | StringLit String
+  | NodeLit String
+  | EmptyList
+  | EmptyQueue
+  
+  -- Variables
+  | Var Variable
+  
+  -- Operaciones Aritmeticas
+  | UMinus Expr
+  | BinOp BinOpType Expr Expr
+  
+  -- Operaciones Booleanas
+  | Not Expr
+  | Comparison CompOpType Expr Expr
+  
+  -- Expresiones Condicionales
+  | Question Expr Expr Expr  -- condition ? then : else
+  
+  -- Llamadas a Funciones
+  | FunCall FunctionType [Expr]
+  
+  -- Constructores de grafos
+  | ValuedGraph [(Expr, [(Expr, Expr)])]  -- [(node, [(node, weight)])]
+  | ValuedEdge Expr Expr Expr             -- node1 node2 weight
+  
+  -- Colecciones
+  | ListConstruct [Expr]
+  | QueueConstruct [Expr]
+  | UnionFindConstruct [(Expr, Expr)]
+  
+ deriving (Show, Eq)
 
--- Expresiones Booleanas
-data BoolExp = BTrue
-             | BFalse
-             | Eq IntExp IntExp
-             | Lt IntExp IntExp
-             | Gt IntExp IntExp
-             | And BoolExp BoolExp
-             | Or BoolExp BoolExp
-             | Not BoolExp
-             | EqNode NodeExp NodeExp
-             | EsCiclico GraphExp
-             | EsConexo GraphExp
- deriving (Show,Eq)
+  -- Operaciones Aritmeticas binarias
+data BinOpType = Plus | Minus | Times | Div | Mod
+ deriving (Show, Eq)
 
+-- Operaciones de comparacion
+data CompOpType = Eq | Lt | Gt | And | Or | EqNode
+ deriving (Show, Eq)
 
--- Expresiones Grafos No Dirigidos
-data GraphExp = ValuedGraph [(NodeExp, [(NodeExp, IntExp)])]
-            | VarGraph Variable
-            | AddNode GraphExp NodeExp
-            | DeleteNode GraphExp NodeExp
-            | AddEdge GraphExp EdgeExp
-            | DeleteEdge GraphExp EdgeExp
-            | GraphComplement GraphExp
-            | GraphUnion GraphExp GraphExp
-            | GraphIntersection GraphExp GraphExp
- deriving (Show,Eq)
+-- Funciones
+data FunctionType = 
+    -- Operaciones de grafos
+    AddNode | DeleteNode | AddEdge | DeleteEdge
+  | GraphComplement | GraphUnion | GraphIntersection
+  | GetEdges | AdjacentNodes
+  
+  -- Operaciones sobre aristas
+  | GetWeight | GetNode1 | GetNode2
+  
+  -- Operaciones de List
+  | Len | TailList | AddList | HeadList
+  | SortByWeight | TailEdges | HeadEdge
+  
+  -- Operaciones de Queue
+  | QueueLen | Enqueue | Dequeue | DequeueNode
+  | IsEmptyQueue
+  
+  -- Operaciones de UnionFind
+  | Union | Find
+  
+  -- Booleanos
+  | EsCiclico | EsConexo | InList | IsEmptyList
+  
+ deriving (Show, Eq)
 
-
--- Comandos
+-- Commandos
 data Comm = Skip
           | Seq Comm Comm
-          | LetValue Variable ValueExp
-          | Cond BoolExp Comm Comm
-          | Repeat BoolExp Comm
- deriving (Show,Eq)
-
-
-data ValueExp = IntVal IntExp
-              | GraphVal GraphExp
-              | EdgeVal EdgeExp
-              | NodeVal NodeExp
-              | ListEdgeVal ListEdgeExp
-              | UnionFindVal UnionFindExp
- deriving (Show,Eq)
-
-
-data ListEdgeExp = EmptyList
-                 | VarList Variable
-                 | GetEdges GraphExp
-                 | SortByWeight ListEdgeExp
-                 | Tail ListEdgeExp
- deriving (Show,Eq)
-
-
-data EdgeExp = ValuedEdge (NodeExp, NodeExp, IntExp)
-             | VarEdge Variable
-             | Head ListEdgeExp
- deriving (Show,Eq)
-
-
-data NodeExp = Node String
-             | VarNode Variable
-             | GetNode1 EdgeExp
-             | GetNode2 EdgeExp
-             | Find NodeExp UnionFindExp
- deriving (Show,Eq)
-
-
-data UnionFindExp = ValuedUnionFind [(NodeExp, NodeExp)]
-                  | VarUnionFind Variable
-                  | Union NodeExp NodeExp UnionFindExp
- deriving (Show,Eq)
+          | AssignValue Variable Expr
+          | Cond Expr Comm Comm
+          | While Expr Comm
+          | For Variable Expr Comm
+          | Print Expr
+ deriving (Show, Eq)

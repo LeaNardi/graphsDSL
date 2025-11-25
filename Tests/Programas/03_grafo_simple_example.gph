@@ -1,0 +1,4 @@
+// Grafo simple
+g := graph [("A", [("B", 5), ("C", 3)]), ("B", [("C", 2)])];
+n := addNode(g, "D");
+print n

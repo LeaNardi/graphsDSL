@@ -1,36 +1,36 @@
-g := newgraph [
+g := graph [
   ("A", [("B", 7), ("D", 5)]),
-  ("B", [("C", 8), ("D", 9), ("E", 7)]),
-  ("C", [("E", 5)]),
-  ("D", [("E", 15), ("F", 6)]),
-  ("E", [("F", 8), ("G", 9)]),
-  ("F", [("G", 11)])
+  ("B", [("A", 7), ("C", 8), ("D", 9), ("E", 7)]),
+  ("C", [("B", 8), ("E", 5)]),
+  ("D", [("A", 5), ("B", 9), ("E", 15), ("F", 6)]),
+  ("E", [("B", 7), ("C", 5), ("D", 15), ("F", 8), ("G", 9)]),
+  ("F", [("D", 6), ("E", 8), ("G", 11)]),
+  ("G", [("E", 9), ("F", 11)])
 ];
 
-uf := newunionfind [
+uf := unionfind [
   ("A", "A"), ("B", "B"), ("C", "C"),
   ("D", "D"), ("E", "E"), ("F", "F"), ("G", "G")
 ];
 
-edges := sort_by_weight get_edges g;
-mst := newgraph [];
+edges := sortByWeight(getEdges(g));
+mst := graph [];
 pending := edges;
 
-repeat
-  edge := head pending;
-  pending := tail pending;
+while len(pending) > 0 do
+  edge_elem := head(pending);
+  pending := tail(pending);
 
-  u := node1 edge;
-  v := node2 edge;
-  w := weight edge;
+  u := getNode1(edge_elem);
+  v := getNode2(edge_elem);
+  w := getWeight(edge_elem);
+  rep_u := find(u, uf);
+  rep_v := find(v, uf);
 
-  rep_u := find u uf;
-  rep_v := find v uf;
-
-  cond ~(rep_u = rep_v) then
-    mst := addedge (u, v, w) mst;
-    uf := union u v uf
+  cond !(rep_u == rep_v) then
+    mst := addEdge(mst, u, v, w) ;
+    uf := union(u, v, uf)
   else
     skip
   end
-until ~(len pending = 0) end
+end

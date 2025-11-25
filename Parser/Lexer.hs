@@ -11,9 +11,10 @@ gdsl = makeTokenParser (emptyDef {
     commentEnd      = "*/",
     commentLine     = "//",
     reservedNames   = ["true", "false", "skip", "cond", "then", "else", 
-                       "end", "while", "do", "repeat", "kruskal", "addnode",
-                       "addedge", "adduedge", "newgraph", "intersect", "with"],
+                       "end", "while", "do", "for", "in", "print",
+                       "graph", "edge", "queue", "unionfind",
+                       "emptyList", "emptyQueue"],
     reservedOpNames = ["+", "-", "*", "/", "%", "?", 
-                       ":", "=", "<", ">", ":=", "|",
-                       "&", "~", ";", "->"]
+                       ":", "=", "==", "<", ">", ":=", "|", "||",
+                       "&", "&&", "~", "!", "=node", ";", "->"]
   })

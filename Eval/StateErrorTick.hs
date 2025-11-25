@@ -5,10 +5,6 @@ import Eval.MonadClasses ( MonadTick(..), MonadError(..), MonadState(..) )
 import Control.Monad ( ap )
 
 
-initState :: Env
-initState = []
-
-
 newtype StateErrorTick a = StateErrorTick { runStateErrorTick :: Env -> Maybe (a, Env, Ticks) }
 
 

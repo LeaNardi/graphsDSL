@@ -1,0 +1,5 @@
+// Expresiones aritmeticas simples
+x := 5;
+y := x + 3;
+y := y + 2;
+print y
