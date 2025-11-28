@@ -8,5 +8,6 @@ echo "Cleaning .hi and .o files in: $TARGET_DIR"
 # Remove .hi and .o files in the target directory
 find . -name "*.hi" -delete
 find . -name "*.o" -delete
+find . -name "Main" -delete
 
 echo "Cleanup complete"

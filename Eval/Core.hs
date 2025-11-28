@@ -5,17 +5,6 @@ import Eval.MonadClasses ( MonadError(..), MonadState(lookfor, update), MonadTic
 import Control.Monad ( when )
 import Data.List (intersect)
 
--- Helper function to validate undirected graphs have symmetric edges
--- Checks that for every edge (n1, n2, w), there exists a reverse edge (n2, n1, w)
-checkUndirectedGraph :: [(Node, [(Node, Float)])] -> Bool
-checkUndirectedGraph adjList = all checkEdge allEdges
-  where
-    allEdges = [(n1, n2, w) | (n1, neighbors) <- adjList, (n2, w) <- neighbors]
-    checkEdge (n1, n2, w) = 
-      case lookup n2 adjList of
-        Nothing -> False  -- n2 not in graph
-        Just neighbors -> (n1, w) `elem` neighbors  -- Check if reverse edge exists with same weight
-
 evalComm :: (MonadState m, MonadError m, MonadTick m) => Comm -> m ()
 evalComm Skip = return ()
 evalComm (AssignValue v expr) = do val <- evalExpr expr
@@ -26,13 +15,13 @@ evalComm (Cond expr c1 c2) = do val <- evalExpr expr
                                 case val of
                                   BoolValue True -> evalComm c1
                                   BoolValue False -> evalComm c2
-                                  IntValue i -> if i /= 0 then evalComm c1 else evalComm c2  -- Backward compatibility
+                                  IntValue i -> if i /= 0 then evalComm c1 else evalComm c2
                                   _ -> throw
 evalComm (While expr c) = do val <- evalExpr expr
                              case val of
                                BoolValue True -> evalComm (Seq c (While expr c))
                                BoolValue False -> return ()
-                               IntValue i -> when (i /= 0) (evalComm (Seq c (While expr c)))  -- Backward compatibility
+                               IntValue i -> when (i /= 0) (evalComm (Seq c (While expr c)))
                                _ -> throw
 evalComm (For v listExpr c) = do val <- evalExpr listExpr
                                  case val of
@@ -41,21 +30,46 @@ evalComm (For v listExpr c) = do val <- evalExpr listExpr
 evalComm (Print expr) = do evalExpr expr
                            return ()
 
+-- Funciones auxiliares
+addNode :: Node -> Graph -> Graph
+addNode n (Graph g)
+  | n `elem` map fst g = Graph g
+  | otherwise = Graph ((n, []) : g)
+
+addEdge :: Node -> Node -> Weight -> Graph -> Graph
+addEdge u v w g = addDirectedEdge v u w (addDirectedEdge u v w g)
+
+addDirectedEdge :: Node -> Node -> Weight -> Graph -> Graph
+addDirectedEdge u v w (Graph []) = Graph [(u, [(v , w)])]
+addDirectedEdge u v w (Graph ((node, nodesWeights) : otros))
+  | u == node = Graph ((node, (v, w) : nodesWeights) : otros)
+  | otherwise = case addDirectedEdge u v w (Graph otros) of
+                  Graph otros' -> Graph ((node, nodesWeights) : otros')
+
+-- Verifica que para cada arista (n1, n2, w), exista la arista (n2, n1, w)
+checkUndirectedGraph :: [(Node, [(Node, Float)])] -> Bool
+checkUndirectedGraph adjList = all checkEdge allEdges
+  where
+    allEdges = [(n1, n2, w) | (n1, neighbors) <- adjList, (n2, w) <- neighbors]
+    checkEdge (n1, n2, w) = 
+      case lookup n2 adjList of
+        Nothing -> False
+        Just neighbors -> (n1, w) `elem` neighbors
 
 evalExpr :: (MonadState m, MonadError m, MonadTick m) => Expr -> m Value
--- Literals
+-- Literales
 evalExpr (IntLit n) = return (IntValue n)
 evalExpr (FloatLit f) = return (FloatValue f)
-evalExpr (BoolLit b) = return (BoolValue b)  -- Now using proper Bool values
+evalExpr (BoolLit b) = return (BoolValue b)
 evalExpr (StringLit s) = return (StringValue s)
-evalExpr (NodeLit s) = return (NodeValue s)  -- Node is now just String
+evalExpr (NodeLit s) = return (NodeValue s)
 evalExpr EmptyList = return (ListValue [])
 evalExpr EmptyQueue = return (QueueValue (Queue []))
 
 -- Variables
 evalExpr (Var v) = lookfor v
 
--- Arithmetic Operations
+-- Operaciones aritmeticas binarias
 evalExpr (UMinus e) = do
   val <- evalExpr e
   case val of
@@ -68,21 +82,21 @@ evalExpr (BinOp op l r) = do
   rval <- evalExpr r
   tick
   case (lval, rval) of
-    -- Integer operations
+    -- Operaciones Int
     (IntValue l', IntValue r') -> case op of
       Plus -> return (IntValue (l' + r'))
       Minus -> return (IntValue (l' - r'))
       Times -> return (IntValue (l' * r'))
       Div -> if r' == 0 then throw else return (IntValue (div l' r'))
       Mod -> if r' == 0 then throw else return (IntValue (mod l' r'))
-    -- Float operations  
+    -- Operaciones Float 
     (FloatValue l', FloatValue r') -> case op of
       Plus -> return (FloatValue (l' + r'))
       Minus -> return (FloatValue (l' - r'))
       Times -> return (FloatValue (l' * r'))
       Div -> if r' == 0.0 then throw else return (FloatValue (l' / r'))
-      Mod -> throw  -- Modulo not defined for floats
-    -- Mixed operations (promote to Float)
+      Mod -> throw
+    -- Operaciones Mixtas (resultado Float)
     (IntValue l', FloatValue r') -> case op of
       Plus -> return (FloatValue (fromInteger l' + r'))
       Minus -> return (FloatValue (fromInteger l' - r'))
@@ -97,13 +111,13 @@ evalExpr (BinOp op l r) = do
       Mod -> throw
     _ -> throw
 
--- Boolean Operations
+-- Operaciones Booleanas
 evalExpr (Not e) = do
   val <- evalExpr e
   case val of
     BoolValue b -> return (BoolValue (not b))
-    IntValue 0 -> return (BoolValue True)   -- For backward compatibility
-    IntValue _ -> return (BoolValue False)  -- For backward compatibility
+    IntValue 0 -> return (BoolValue True)
+    IntValue _ -> return (BoolValue False)
     _ -> throw
 
 evalExpr (Comparison op l r) = do
@@ -131,30 +145,30 @@ evalExpr (Comparison op l r) = do
       _ -> throw
     And -> case (lval, rval) of
       (BoolValue l', BoolValue r') -> return (BoolValue (l' && r'))
-      (IntValue l', IntValue r') -> return (BoolValue (l' /= 0 && r' /= 0))  -- Backward compatibility
+      (IntValue l', IntValue r') -> return (BoolValue (l' /= 0 && r' /= 0))
       _ -> throw
     Or -> case (lval, rval) of
       (BoolValue l', BoolValue r') -> return (BoolValue (l' || r'))
-      (IntValue l', IntValue r') -> return (BoolValue (l' /= 0 || r' /= 0))  -- Backward compatibility
+      (IntValue l', IntValue r') -> return (BoolValue (l' /= 0 || r' /= 0))
       _ -> throw
     EqNode -> case (lval, rval) of
       (NodeValue n1, NodeValue n2) -> return (BoolValue (n1 == n2))
       _ -> throw
 
--- Conditional Expression
+-- Expresiones Condicionales
 evalExpr (Question cond thenE elseE) = do
   condVal <- evalExpr cond
   case condVal of
     BoolValue False -> evalExpr elseE
     BoolValue True -> evalExpr thenE
-    IntValue 0 -> evalExpr elseE       -- Backward compatibility
-    IntValue _ -> evalExpr thenE       -- Backward compatibility
+    IntValue 0 -> evalExpr elseE
+    IntValue _ -> evalExpr thenE
     _ -> throw
 
--- Complex constructors
+-- Constructores de grafos
 evalExpr (ValuedGraph nodeList) = do
   graph <- mapM evalNodeEntry nodeList
-  -- Automatically validate that the graph has symmetric edges (undirected graph)
+  -- validamos que el grafo sea no dirigido
   if not (checkUndirectedGraph graph)
     then error "Invalid undirected graph: edges must be symmetric (if A->B exists, B->A must exist with same weight)"
     else return (GraphValue (Graph graph))
@@ -163,7 +177,7 @@ evalExpr (ValuedGraph nodeList) = do
       nodeVal <- evalExpr nodeExpr
       node <- case nodeVal of
         NodeValue n -> return n
-        StringValue s -> return s  -- Auto-convert strings to nodes
+        StringValue s -> return s
         _ -> throw
       adjVals <- mapM evalAdjEntry adjList
       return (node, adjVals)
@@ -172,11 +186,11 @@ evalExpr (ValuedGraph nodeList) = do
       weightVal <- evalExpr weightExpr
       node <- case nodeVal of
         NodeValue n -> return n
-        StringValue s -> return s  -- Auto-convert strings to nodes
+        StringValue s -> return s
         _ -> throw
       weight <- case weightVal of
         FloatValue w -> return w
-        IntValue w -> return (fromInteger w)  -- Convert Int to Float
+        IntValue w -> return (fromInteger w)
         _ -> throw
       return (node, weight)
 
@@ -186,57 +200,22 @@ evalExpr (ValuedEdge n1Expr n2Expr wExpr) = do
   wVal <- evalExpr wExpr
   n1 <- case n1Val of
     NodeValue n -> return n
-    StringValue s -> return s  -- Auto-convert strings to nodes
+    StringValue s -> return s
     _ -> throw
   n2 <- case n2Val of
     NodeValue n -> return n
-    StringValue s -> return s  -- Auto-convert strings to nodes
+    StringValue s -> return s
     _ -> throw
   w <- case wVal of
     FloatValue f -> return f
-    IntValue i -> return (fromInteger i)  -- Convert Int to Float
+    IntValue i -> return (fromInteger i)
     _ -> throw
   return (EdgeValue (Edge n1 n2 w))
 
--- Simple function calls (minimal implementation for academic purposes)
-evalExpr (FunCall AddNode [graphExpr, nodeExpr]) = do
-  graphVal <- evalExpr graphExpr
-  nodeVal <- evalExpr nodeExpr
-  case graphVal of
-    GraphValue graph -> do
-      node <- case nodeVal of
-        NodeValue n -> return n
-        StringValue s -> return s  -- Auto-convert strings to nodes
-        _ -> throw
-      return (GraphValue (addNode node graph))
-    _ -> throw
-
-evalExpr (FunCall AddEdge [graphExpr, node1Expr, node2Expr, weightExpr]) = do
-  graphVal <- evalExpr graphExpr
-  node1Val <- evalExpr node1Expr
-  node2Val <- evalExpr node2Expr
-  weightVal <- evalExpr weightExpr
-  case graphVal of
-    GraphValue graph -> do
-      node1 <- case node1Val of
-        NodeValue n -> return n
-        StringValue s -> return s  -- Auto-convert strings to nodes
-        _ -> throw
-      node2 <- case node2Val of
-        NodeValue n -> return n
-        StringValue s -> return s  -- Auto-convert strings to nodes
-        _ -> throw
-      weight <- case weightVal of
-        FloatValue w -> return w
-        IntValue i -> return (fromInteger i)  -- Convert Int to Float
-        _ -> throw
-      return (GraphValue (addEdge node1 node2 weight graph))
-    _ -> throw
-
--- Lists and Queues
+-- Colecciones
 evalExpr (ListConstruct exprs) = do
   vals <- mapM evalExpr exprs
-  return (ListValue vals)  -- Now supports any type of values
+  return (ListValue vals)
 
 evalExpr (QueueConstruct exprs) = do
   vals <- mapM evalExpr exprs
@@ -249,7 +228,6 @@ evalExpr (UnionFindConstruct pairs) = do
     evalPair (nodeExpr, parentExpr) = do
       nodeVal <- evalExpr nodeExpr
       parentVal <- evalExpr parentExpr
-      -- Convert to nodes (strings)
       let node = case nodeVal of
                    NodeValue n -> n
                    StringValue s -> s
@@ -260,7 +238,7 @@ evalExpr (UnionFindConstruct pairs) = do
                      _ -> error "UnionFind parents must be nodes or strings"
       return (node, parent)
 
--- Edge operations
+-- Operaciones de Edge
 evalExpr (FunCall GetNode1 [edgeExpr]) = do
   edgeVal <- evalExpr edgeExpr
   case edgeVal of
@@ -279,32 +257,66 @@ evalExpr (FunCall GetWeight [edgeExpr]) = do
     EdgeValue (Edge _ _ w) -> return (FloatValue w)
     _ -> throw
 
--- Graph operations
+-- Operaciones de Graph
+evalExpr (FunCall AddNode [graphExpr, nodeExpr]) = do
+  graphVal <- evalExpr graphExpr
+  nodeVal <- evalExpr nodeExpr
+  case graphVal of
+    GraphValue graph -> do
+      node <- case nodeVal of
+        NodeValue n -> return n
+        StringValue s -> return s
+        _ -> throw
+      return (GraphValue (addNode node graph))
+    _ -> throw
+
+evalExpr (FunCall AddEdge [graphExpr, node1Expr, node2Expr, weightExpr]) = do
+  graphVal <- evalExpr graphExpr
+  node1Val <- evalExpr node1Expr
+  node2Val <- evalExpr node2Expr
+  weightVal <- evalExpr weightExpr
+  case graphVal of
+    GraphValue graph -> do
+      node1 <- case node1Val of
+        NodeValue n -> return n
+        StringValue s -> return s
+        _ -> throw
+      node2 <- case node2Val of
+        NodeValue n -> return n
+        StringValue s -> return s
+        _ -> throw
+      weight <- case weightVal of
+        FloatValue w -> return w
+        IntValue i -> return (fromInteger i)
+        _ -> throw
+      return (GraphValue (addEdge node1 node2 weight graph))
+    _ -> throw
+
 evalExpr (FunCall GetEdges [graphExpr]) = do
   graphVal <- evalExpr graphExpr
   case graphVal of
     GraphValue (Graph adjList) -> do
-      -- Get all edges from adjacency list
+      -- traemos todas las aristas de la lista de adyacencia
       let allEdges = [(n1, n2, w) | (n1, neighbors) <- adjList, (n2, w) <- neighbors]
-      -- For undirected graphs, remove duplicates (keep only n1 < n2)
+      -- para grafos no dirigidos eliminamos las aristas repetidas (dejamos las que sean n1 < n2)
       let uniqueEdges = [(n1, n2, w) | (n1, n2, w) <- allEdges, n1 < n2]
       let edgeValues = [EdgeValue (Edge n1 n2 w) | (n1, n2, w) <- uniqueEdges]
       return (ListValue edgeValues)
     _ -> throw
 
--- List operations
+-- Operaciones de List
 evalExpr (FunCall HeadList [listExpr]) = do
   listVal <- evalExpr listExpr
   case listVal of
     ListValue (x:_) -> return x
-    ListValue [] -> throw  -- Error: head of empty list
+    ListValue [] -> throw
     _ -> throw
 
 evalExpr (FunCall TailList [listExpr]) = do
   listVal <- evalExpr listExpr
   case listVal of
     ListValue (_:xs) -> return (ListValue xs)
-    ListValue [] -> throw  -- Error: tail of empty list
+    ListValue [] -> throw
     _ -> throw
 
 evalExpr (FunCall Len [listExpr]) = do
@@ -333,7 +345,7 @@ evalExpr (FunCall SortByWeight [listExpr]) = do
           larger = sortBy cmp [a | a <- xs, cmp a x /= LT]
       in smaller ++ [x] ++ larger
 
--- UnionFind operations
+-- Operaciones de UnionFind
 evalExpr (FunCall Find [nodeExpr, ufExpr]) = do
   nodeVal <- evalExpr nodeExpr
   ufVal <- evalExpr ufExpr
@@ -350,8 +362,8 @@ evalExpr (FunCall Find [nodeExpr, ufExpr]) = do
     findRoot :: Node -> [(Node, Node)] -> Node
     findRoot node pairs =
       case lookup node pairs of
-        Just parent | parent == node -> node  -- Found root
-        Just parent -> findRoot parent pairs  -- Keep searching
+        Just parent | parent == node -> node
+        Just parent -> findRoot parent pairs
         Nothing -> error $ "Node not found in UnionFind: " ++ node
 
 evalExpr (FunCall Union [node1Expr, node2Expr, ufExpr]) = do
@@ -371,9 +383,10 @@ evalExpr (FunCall Union [node1Expr, node2Expr, ufExpr]) = do
       let root1 = findRoot node1 pairs
       let root2 = findRoot node2 pairs
       if root1 == root2
-        then return (UnionFindValue (UnionFind pairs))  -- Already in same set
+        -- mismo conjunto
+        then return (UnionFindValue (UnionFind pairs))
         else do
-          -- Union by making root1 point to root2
+          -- unimos haciendo que root1 apunte a root2
           let newPairs = map (\(n, p) -> if n == root1 then (n, root2) else (n, p)) pairs
           return (UnionFindValue (UnionFind newPairs))
     _ -> throw
@@ -385,22 +398,5 @@ evalExpr (FunCall Union [node1Expr, node2Expr, ufExpr]) = do
         Just parent -> findRoot parent pairs
         Nothing -> error $ "Node not found in UnionFind: " ++ node
 
--- Default case for unimplemented function calls
+-- Las no implementadas tiran error
 evalExpr (FunCall _ _) = throw
-
-
-
-addNode :: Node -> Graph -> Graph
-addNode n (Graph g)
-  | n `elem` map fst g = Graph g
-  | otherwise = Graph ((n, []) : g)
-
-addEdge :: Node -> Node -> Weight -> Graph -> Graph
-addEdge u v w g = addDirectedEdge v u w (addDirectedEdge u v w g)
-
-addDirectedEdge :: Node -> Node -> Weight -> Graph -> Graph
-addDirectedEdge u v w (Graph []) = Graph [(u, [(v , w)])]
-addDirectedEdge u v w (Graph ((node, nodesWeights) : otros))
-  | u == node = Graph ((node, (v, w) : nodesWeights) : otros)
-  | otherwise = case addDirectedEdge u v w (Graph otros) of
-                  Graph otros' -> Graph ((node, nodesWeights) : otros')

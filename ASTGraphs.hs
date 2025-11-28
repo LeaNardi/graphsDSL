@@ -28,7 +28,7 @@ data UnionFind = UnionFind [(Node, Node)] deriving (Show, Eq)  -- (element, pare
 
 -- Expresion generica
 data Expr = 
-    -- Literales
+  -- Literales
     IntLit Integer
   | FloatLit Float
   | BoolLit Bool
@@ -65,7 +65,7 @@ data Expr =
   
  deriving (Show, Eq)
 
-  -- Operaciones Aritmeticas binarias
+-- Operaciones aritmeticas binarias
 data BinOpType = Plus | Minus | Times | Div | Mod
  deriving (Show, Eq)
 
@@ -75,27 +75,25 @@ data CompOpType = Eq | Lt | Gt | And | Or | EqNode
 
 -- Funciones
 data FunctionType = 
-    -- Operaciones de grafos
+  -- Operaciones de Graph
     AddNode | DeleteNode | AddEdge | DeleteEdge
   | GraphComplement | GraphUnion | GraphIntersection
-  | GetEdges | AdjacentNodes
+  | GetEdges | AdjacentNodes | EsCiclico | EsConexo
   
-  -- Operaciones sobre aristas
+  -- Operaciones de Edge
   | GetWeight | GetNode1 | GetNode2
   
   -- Operaciones de List
   | Len | TailList | AddList | HeadList
   | SortByWeight | TailEdges | HeadEdge
+  | InList | IsEmptyList
   
   -- Operaciones de Queue
   | QueueLen | Enqueue | Dequeue | DequeueNode
   | IsEmptyQueue
   
   -- Operaciones de UnionFind
-  | Union | Find
-  
-  -- Booleanos
-  | EsCiclico | EsConexo | InList | IsEmptyList
+  | Union | Find    
   
  deriving (Show, Eq)
 

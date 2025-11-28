@@ -2,7 +2,7 @@ module Eval.Formatter where
 
 import ASTGraphs (Env, Ticks, Value(..))
 
--- Format evaluation result (Env, Ticks)
+-- Solo agrega saltos de linea e indentacion
 formatEval :: (Env, Ticks) -> String
 formatEval (env, ticks) = 
     "Environment:\n" ++ formatEnv env ++ "\n" ++

@@ -1,3 +1,5 @@
+{-# LANGUAGE InstanceSigs #-}
+
 module Eval.StateErrorTick where
 
 import ASTGraphs ( Env, Ticks, Variable, Value )
