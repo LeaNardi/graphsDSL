@@ -13,7 +13,7 @@ class Monad m => MonadState m where
 
 class Monad m => MonadError m where
 
-    throw :: m a
+    throw :: String -> m a
 
 
 class Monad m => MonadTick m where

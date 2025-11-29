@@ -16,17 +16,17 @@ evalComm (Cond expr c1 c2) = do val <- evalExpr expr
                                   BoolValue True -> evalComm c1
                                   BoolValue False -> evalComm c2
                                   IntValue i -> if i /= 0 then evalComm c1 else evalComm c2
-                                  _ -> throw
+                                  _ -> throw "Conditional expression must be Bool or Int"
 evalComm (While expr c) = do val <- evalExpr expr
                              case val of
                                BoolValue True -> evalComm (Seq c (While expr c))
                                BoolValue False -> return ()
                                IntValue i -> when (i /= 0) (evalComm (Seq c (While expr c)))
-                               _ -> throw
+                               _ -> throw "While condition must be Bool or Int"
 evalComm (For v listExpr c) = do val <- evalExpr listExpr
                                  case val of
                                    ListValue values -> mapM_ (\value -> do update v value; evalComm c) values
-                                   _ -> throw
+                                   _ -> throw "For loop requires a List"
 evalComm (Print expr) = do evalExpr expr
                            return ()
 
@@ -75,7 +75,7 @@ evalExpr (UMinus e) = do
   case val of
     IntValue i -> return (IntValue (negate i))
     FloatValue f -> return (FloatValue (negate f))
-    _ -> throw
+    _ -> throw "Unary minus requires Int or Float"
 
 evalExpr (BinOp op l r) = do
   lval <- evalExpr l
@@ -87,29 +87,29 @@ evalExpr (BinOp op l r) = do
       Plus -> return (IntValue (l' + r'))
       Minus -> return (IntValue (l' - r'))
       Times -> return (IntValue (l' * r'))
-      Div -> if r' == 0 then throw else return (IntValue (div l' r'))
-      Mod -> if r' == 0 then throw else return (IntValue (mod l' r'))
+      Div -> if r' == 0 then throw "Division by zero" else return (IntValue (div l' r'))
+      Mod -> if r' == 0 then throw "Modulo by zero" else return (IntValue (mod l' r'))
     -- Operaciones Float 
     (FloatValue l', FloatValue r') -> case op of
       Plus -> return (FloatValue (l' + r'))
       Minus -> return (FloatValue (l' - r'))
       Times -> return (FloatValue (l' * r'))
-      Div -> if r' == 0.0 then throw else return (FloatValue (l' / r'))
-      Mod -> throw
+      Div -> if r' == 0.0 then throw "Division by zero" else return (FloatValue (l' / r'))
+      Mod -> throw "Modulo operation not supported for Float types"
     -- Operaciones Mixtas (resultado Float)
     (IntValue l', FloatValue r') -> case op of
       Plus -> return (FloatValue (fromInteger l' + r'))
       Minus -> return (FloatValue (fromInteger l' - r'))
       Times -> return (FloatValue (fromInteger l' * r'))
-      Div -> if r' == 0.0 then throw else return (FloatValue (fromInteger l' / r'))
-      Mod -> throw
+      Div -> if r' == 0.0 then throw "Division by zero" else return (FloatValue (fromInteger l' / r'))
+      Mod -> throw "Modulo operation not supported for mixed Int/Float types"
     (FloatValue l', IntValue r') -> case op of
       Plus -> return (FloatValue (l' + fromInteger r'))
       Minus -> return (FloatValue (l' - fromInteger r'))
       Times -> return (FloatValue (l' * fromInteger r'))
-      Div -> if r' == 0 then throw else return (FloatValue (l' / fromInteger r'))
-      Mod -> throw
-    _ -> throw
+      Div -> if r' == 0 then throw "Division by zero" else return (FloatValue (l' / fromInteger r'))
+      Mod -> throw "Modulo operation not supported for mixed Float/Int types"
+    _ -> throw "Invalid operand types for arithmetic operation"
 
 -- Operaciones Booleanas
 evalExpr (Not e) = do
@@ -118,7 +118,7 @@ evalExpr (Not e) = do
     BoolValue b -> return (BoolValue (not b))
     IntValue 0 -> return (BoolValue True)
     IntValue _ -> return (BoolValue False)
-    _ -> throw
+    _ -> throw "Not operation requires Bool or Int"
 
 evalExpr (Comparison op l r) = do
   lval <- evalExpr l
@@ -130,30 +130,30 @@ evalExpr (Comparison op l r) = do
       (BoolValue l', BoolValue r') -> return (BoolValue (l' == r'))
       (StringValue l', StringValue r') -> return (BoolValue (l' == r'))
       (NodeValue l', NodeValue r') -> return (BoolValue (l' == r'))
-      _ -> throw
+      _ -> throw "Equality comparison requires matching types (Int, Float, Bool, String, or Node)"
     Lt -> case (lval, rval) of
       (IntValue l', IntValue r') -> return (BoolValue (l' < r'))
       (FloatValue l', FloatValue r') -> return (BoolValue (l' < r'))
       (IntValue l', FloatValue r') -> return (BoolValue (fromInteger l' < r'))
       (FloatValue l', IntValue r') -> return (BoolValue (l' < fromInteger r'))
-      _ -> throw
+      _ -> throw "Less than comparison requires numeric types (Int or Float)"
     Gt -> case (lval, rval) of
       (IntValue l', IntValue r') -> return (BoolValue (l' > r'))
       (FloatValue l', FloatValue r') -> return (BoolValue (l' > r'))
       (IntValue l', FloatValue r') -> return (BoolValue (fromInteger l' > r'))
       (FloatValue l', IntValue r') -> return (BoolValue (l' > fromInteger r'))
-      _ -> throw
+      _ -> throw "Greater than comparison requires numeric types (Int or Float)"
     And -> case (lval, rval) of
       (BoolValue l', BoolValue r') -> return (BoolValue (l' && r'))
       (IntValue l', IntValue r') -> return (BoolValue (l' /= 0 && r' /= 0))
-      _ -> throw
+      _ -> throw "And operation requires Bool or Int types"
     Or -> case (lval, rval) of
       (BoolValue l', BoolValue r') -> return (BoolValue (l' || r'))
       (IntValue l', IntValue r') -> return (BoolValue (l' /= 0 || r' /= 0))
-      _ -> throw
+      _ -> throw "Or operation requires Bool or Int types"
     EqNode -> case (lval, rval) of
       (NodeValue n1, NodeValue n2) -> return (BoolValue (n1 == n2))
-      _ -> throw
+      _ -> throw "Node equality requires Node types"
 
 -- Expresiones Condicionales
 evalExpr (Question cond thenE elseE) = do
@@ -163,14 +163,14 @@ evalExpr (Question cond thenE elseE) = do
     BoolValue True -> evalExpr thenE
     IntValue 0 -> evalExpr elseE
     IntValue _ -> evalExpr thenE
-    _ -> throw
+    _ -> throw "Ternary operator condition must be Bool or Int"
 
 -- Constructores de grafos
 evalExpr (ValuedGraph nodeList) = do
   graph <- mapM evalNodeEntry nodeList
   -- validamos que el grafo sea no dirigido
   if not (checkUndirectedGraph graph)
-    then error "Invalid undirected graph: edges must be symmetric (if A->B exists, B->A must exist with same weight)"
+    then throw "Invalid undirected graph: edges must be symmetric (if A->B exists, B->A must exist with same weight)"
     else return (GraphValue (Graph graph))
   where
     evalNodeEntry (nodeExpr, adjList) = do
@@ -178,7 +178,7 @@ evalExpr (ValuedGraph nodeList) = do
       node <- case nodeVal of
         NodeValue n -> return n
         StringValue s -> return s
-        _ -> throw
+        _ -> throw "Graph node must be Node or String type"
       adjVals <- mapM evalAdjEntry adjList
       return (node, adjVals)
     evalAdjEntry (nodeExpr, weightExpr) = do
@@ -187,11 +187,11 @@ evalExpr (ValuedGraph nodeList) = do
       node <- case nodeVal of
         NodeValue n -> return n
         StringValue s -> return s
-        _ -> throw
+        _ -> throw "Graph adjacent node must be Node or String type"
       weight <- case weightVal of
         FloatValue w -> return w
         IntValue w -> return (fromInteger w)
-        _ -> throw
+        _ -> throw "Graph edge weight must be Float or Int type"
       return (node, weight)
 
 evalExpr (ValuedEdge n1Expr n2Expr wExpr) = do
@@ -201,15 +201,15 @@ evalExpr (ValuedEdge n1Expr n2Expr wExpr) = do
   n1 <- case n1Val of
     NodeValue n -> return n
     StringValue s -> return s
-    _ -> throw
+    _ -> throw "Edge node1 must be Node or String type"
   n2 <- case n2Val of
     NodeValue n -> return n
     StringValue s -> return s
-    _ -> throw
+    _ -> throw "Edge node2 must be Node or String type"
   w <- case wVal of
     FloatValue f -> return f
     IntValue i -> return (fromInteger i)
-    _ -> throw
+    _ -> throw "Edge weight must be Float or Int type"
   return (EdgeValue (Edge n1 n2 w))
 
 -- Colecciones
@@ -228,14 +228,14 @@ evalExpr (UnionFindConstruct pairs) = do
     evalPair (nodeExpr, parentExpr) = do
       nodeVal <- evalExpr nodeExpr
       parentVal <- evalExpr parentExpr
-      let node = case nodeVal of
-                   NodeValue n -> n
-                   StringValue s -> s
-                   _ -> error "UnionFind elements must be nodes or strings"
-      let parent = case parentVal of
-                     NodeValue n -> n
-                     StringValue s -> s
-                     _ -> error "UnionFind parents must be nodes or strings"
+      node <- case nodeVal of
+                NodeValue n -> return n
+                StringValue s -> return s
+                _ -> throw "UnionFind elements must be Node or String type"
+      parent <- case parentVal of
+                  NodeValue n -> return n
+                  StringValue s -> return s
+                  _ -> throw "UnionFind parents must be Node or String type"
       return (node, parent)
 
 -- Operaciones de Edge
@@ -243,19 +243,19 @@ evalExpr (FunCall GetNode1 [edgeExpr]) = do
   edgeVal <- evalExpr edgeExpr
   case edgeVal of
     EdgeValue (Edge n1 _ _) -> return (NodeValue n1)
-    _ -> throw
+    _ -> throw "GetNode1 requires an Edge type"
 
 evalExpr (FunCall GetNode2 [edgeExpr]) = do
   edgeVal <- evalExpr edgeExpr
   case edgeVal of
     EdgeValue (Edge _ n2 _) -> return (NodeValue n2)
-    _ -> throw
+    _ -> throw "GetNode2 requires an Edge type"
 
 evalExpr (FunCall GetWeight [edgeExpr]) = do
   edgeVal <- evalExpr edgeExpr
   case edgeVal of
     EdgeValue (Edge _ _ w) -> return (FloatValue w)
-    _ -> throw
+    _ -> throw "GetWeight requires an Edge type"
 
 -- Operaciones de Graph
 evalExpr (FunCall AddNode [graphExpr, nodeExpr]) = do
@@ -266,9 +266,9 @@ evalExpr (FunCall AddNode [graphExpr, nodeExpr]) = do
       node <- case nodeVal of
         NodeValue n -> return n
         StringValue s -> return s
-        _ -> throw
+        _ -> throw "AddNode requires node to be Node or String type"
       return (GraphValue (addNode node graph))
-    _ -> throw
+    _ -> throw "AddNode requires a Graph type"
 
 evalExpr (FunCall AddEdge [graphExpr, node1Expr, node2Expr, weightExpr]) = do
   graphVal <- evalExpr graphExpr
@@ -280,17 +280,17 @@ evalExpr (FunCall AddEdge [graphExpr, node1Expr, node2Expr, weightExpr]) = do
       node1 <- case node1Val of
         NodeValue n -> return n
         StringValue s -> return s
-        _ -> throw
+        _ -> throw "AddEdge requires node1 to be Node or String type"
       node2 <- case node2Val of
         NodeValue n -> return n
         StringValue s -> return s
-        _ -> throw
+        _ -> throw "AddEdge requires node2 to be Node or String type"
       weight <- case weightVal of
         FloatValue w -> return w
         IntValue i -> return (fromInteger i)
-        _ -> throw
+        _ -> throw "AddEdge requires weight to be Float or Int type"
       return (GraphValue (addEdge node1 node2 weight graph))
-    _ -> throw
+    _ -> throw "AddEdge requires a Graph type"
 
 evalExpr (FunCall GetEdges [graphExpr]) = do
   graphVal <- evalExpr graphExpr
@@ -302,28 +302,28 @@ evalExpr (FunCall GetEdges [graphExpr]) = do
       let uniqueEdges = [(n1, n2, w) | (n1, n2, w) <- allEdges, n1 < n2]
       let edgeValues = [EdgeValue (Edge n1 n2 w) | (n1, n2, w) <- uniqueEdges]
       return (ListValue edgeValues)
-    _ -> throw
+    _ -> throw "GetEdges requires a Graph type"
 
 -- Operaciones de List
 evalExpr (FunCall HeadList [listExpr]) = do
   listVal <- evalExpr listExpr
   case listVal of
     ListValue (x:_) -> return x
-    ListValue [] -> throw
-    _ -> throw
+    ListValue [] -> throw "HeadList called on empty list"
+    _ -> throw "HeadList requires a List type"
 
 evalExpr (FunCall TailList [listExpr]) = do
   listVal <- evalExpr listExpr
   case listVal of
     ListValue (_:xs) -> return (ListValue xs)
-    ListValue [] -> throw
-    _ -> throw
+    ListValue [] -> throw "TailList called on empty list"
+    _ -> throw "TailList requires a List type"
 
 evalExpr (FunCall Len [listExpr]) = do
   listVal <- evalExpr listExpr
   case listVal of
     ListValue xs -> return (IntValue (fromIntegral (length xs)))
-    _ -> throw
+    _ -> throw "Len requires a List type"
 
 evalExpr (FunCall SortByWeight [listExpr]) = do
   listVal <- evalExpr listExpr
@@ -331,7 +331,7 @@ evalExpr (FunCall SortByWeight [listExpr]) = do
     ListValue edges -> do
       let sortedEdges = sortByEdgeWeight edges
       return (ListValue sortedEdges)
-    _ -> throw
+    _ -> throw "SortByWeight requires a List type"
   where
     sortByEdgeWeight :: [Value] -> [Value]
     sortByEdgeWeight values = 
@@ -351,13 +351,13 @@ evalExpr (FunCall Find [nodeExpr, ufExpr]) = do
   ufVal <- evalExpr ufExpr
   case (nodeVal, ufVal) of
     (_, UnionFindValue (UnionFind pairs)) -> do
-      let node = case nodeVal of
-                   NodeValue n -> n
-                   StringValue s -> s
-                   _ -> error "Find requires a node or string"
+      node <- case nodeVal of
+                NodeValue n -> return n
+                StringValue s -> return s
+                _ -> throw "Find requires node to be Node or String type"
       let root = findRoot node pairs
       return (NodeValue root)
-    _ -> throw
+    _ -> throw "Find requires a UnionFind type"
   where
     findRoot :: Node -> [(Node, Node)] -> Node
     findRoot node pairs =
@@ -372,14 +372,14 @@ evalExpr (FunCall Union [node1Expr, node2Expr, ufExpr]) = do
   ufVal <- evalExpr ufExpr
   case (node1Val, node2Val, ufVal) of
     (_, _, UnionFindValue (UnionFind pairs)) -> do
-      let node1 = case node1Val of
-                    NodeValue n -> n
-                    StringValue s -> s
-                    _ -> error "Union requires nodes or strings"
-      let node2 = case node2Val of
-                    NodeValue n -> n
-                    StringValue s -> s
-                    _ -> error "Union requires nodes or strings"
+      node1 <- case node1Val of
+                 NodeValue n -> return n
+                 StringValue s -> return s
+                 _ -> throw "Union requires node1 to be Node or String type"
+      node2 <- case node2Val of
+                 NodeValue n -> return n
+                 StringValue s -> return s
+                 _ -> throw "Union requires node2 to be Node or String type"
       let root1 = findRoot node1 pairs
       let root2 = findRoot node2 pairs
       if root1 == root2
@@ -389,14 +389,14 @@ evalExpr (FunCall Union [node1Expr, node2Expr, ufExpr]) = do
           -- unimos haciendo que root1 apunte a root2
           let newPairs = map (\(n, p) -> if n == root1 then (n, root2) else (n, p)) pairs
           return (UnionFindValue (UnionFind newPairs))
-    _ -> throw
+    _ -> throw "Union requires a UnionFind type"
   where
     findRoot :: Node -> [(Node, Node)] -> Node
     findRoot node pairs =
       case lookup node pairs of
         Just parent | parent == node -> node
         Just parent -> findRoot parent pairs
-        Nothing -> error $ "Node not found in UnionFind: " ++ node
+        Nothing -> error $ "Node '" ++ node ++ "' not found in UnionFind"
 
 -- Las no implementadas tiran error
-evalExpr (FunCall _ _) = throw
+evalExpr (FunCall _ _) = throw "Function not implemented or invalid arguments"

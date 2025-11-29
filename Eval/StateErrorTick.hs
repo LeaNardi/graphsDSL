@@ -7,19 +7,19 @@ import Eval.MonadClasses ( MonadTick(..), MonadError(..), MonadState(..) )
 import Control.Monad ( ap )
 
 
-newtype StateErrorTick a = StateErrorTick { runStateErrorTick :: Env -> Maybe (a, Env, Ticks) }
+newtype StateErrorTick a = StateErrorTick { runStateErrorTick :: Env -> Either String (a, Env, Ticks) }
 
 
 instance Functor StateErrorTick where
 
     fmap :: (a -> b) -> StateErrorTick a -> StateErrorTick b
-    fmap f (StateErrorTick g) = StateErrorTick { runStateErrorTick = fmap (\ (a, s', t) -> (f a, s', t)) . g }
+    fmap f (StateErrorTick g) = StateErrorTick { runStateErrorTick = fmap (fmap (\ (a, s', t) -> (f a, s', t))) . g }
 
 
 instance Applicative StateErrorTick where
 
     pure :: a -> StateErrorTick a
-    pure x = StateErrorTick { runStateErrorTick = \ s -> Just (x, s, 0) }
+    pure x = StateErrorTick { runStateErrorTick = \ s -> Right (x, s, 0) }
 
     (<*>) :: StateErrorTick (a -> b) -> StateErrorTick a -> StateErrorTick b
     (<*>) = ap
@@ -40,19 +40,22 @@ instance Monad StateErrorTick where
 instance MonadState StateErrorTick where
 
     lookfor :: ASTGraphs.Variable -> StateErrorTick ASTGraphs.Value
-    lookfor var = StateErrorTick { runStateErrorTick = \ s -> (\ v -> Just (v, s, 0)) =<< lookup var s }
+    lookfor var = StateErrorTick { runStateErrorTick = \ s -> 
+        case lookup var s of
+            Just v -> Right (v, s, 0)
+            Nothing -> Left $ "Variable '" ++ var ++ "' not found" }
     
     update :: ASTGraphs.Variable -> ASTGraphs.Value -> StateErrorTick ()
-    update var val = StateErrorTick { runStateErrorTick = \ s -> Just ((), (var, val) : filter ((/= var) . fst) s, 0) }
+    update var val = StateErrorTick { runStateErrorTick = \ s -> Right ((), (var, val) : filter ((/= var) . fst) s, 0) }
     
     saveState :: StateErrorTick Env
-    saveState = StateErrorTick { runStateErrorTick = \ s -> Just (s, s, 0) }
+    saveState = StateErrorTick { runStateErrorTick = \ s -> Right (s, s, 0) }
     
     putState :: Env -> StateErrorTick ()
-    putState r = StateErrorTick { runStateErrorTick = \ _ -> Just ((), r, 0) }
-
-
 instance MonadError StateErrorTick where
+    
+    throw :: String -> StateErrorTick a
+    throw msg = StateErrorTick { runStateErrorTick = const (Left msg) }
     
     throw :: StateErrorTick a
     throw = StateErrorTick { runStateErrorTick = const Nothing }
@@ -61,4 +64,4 @@ instance MonadError StateErrorTick where
 instance MonadTick StateErrorTick where
     
     tick :: StateErrorTick ()
-    tick = StateErrorTick { runStateErrorTick = \ s -> Just ((), s, 1) }
+    tick = StateErrorTick { runStateErrorTick = \ s -> Right ((), s, 1) }

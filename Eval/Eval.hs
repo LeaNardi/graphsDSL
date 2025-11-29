@@ -7,7 +7,7 @@ import Eval.Core ( evalComm )
 initState :: Env
 initState = []
 
-eval :: Comm -> (Env, Ticks)
+eval :: Comm -> Either String (Env, Ticks)
 eval p = case runStateErrorTick (evalComm p) initState of
-    Just (_, s, t) -> (s, t)
-    Nothing        -> error "ERROR!"
+    Right (_, s, t) -> Right (s, t)
+    Left err        -> Left err
