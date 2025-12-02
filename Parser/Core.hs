@@ -55,7 +55,6 @@ parseComparison = try (do
   op <- (reservedOp gdsl "==" $> Comparison Eq)
     <|> (reservedOp gdsl "<" $> Comparison Lt)
     <|> (reservedOp gdsl ">" $> Comparison Gt)
-    <|> (reservedOp gdsl "=node" $> Comparison EqNode)
   right <- parseArithmetic
   return $ op left right)
                         <|> parseArithmetic

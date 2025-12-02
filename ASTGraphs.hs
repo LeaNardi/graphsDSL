@@ -33,7 +33,6 @@ data Expr =
   | FloatLit Float
   | BoolLit Bool
   | StringLit String
-  | NodeLit String
   | EmptyList
   | EmptyQueue
   
@@ -70,7 +69,7 @@ data BinOpType = Plus | Minus | Times | Div | Mod
  deriving (Show, Eq)
 
 -- Operaciones de comparacion
-data CompOpType = Eq | Lt | Gt | And | Or | EqNode
+data CompOpType = Eq | Lt | Gt | And | Or
  deriving (Show, Eq)
 
 -- Funciones

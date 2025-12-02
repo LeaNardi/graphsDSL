@@ -24,7 +24,6 @@ comparisonexp ::= arithmeticexp
                 | comparisonexp == arithmeticexp
                 | comparisonexp < arithmeticexp
                 | comparisonexp > arithmeticexp
-                | comparisonexp =node arithmeticexp
 
 
 
