@@ -13,7 +13,10 @@ newtype StateErrorTick a = StateErrorTick { runStateErrorTick :: Env -> Either S
 instance Functor StateErrorTick where
 
     fmap :: (a -> b) -> StateErrorTick a -> StateErrorTick b
-    fmap f (StateErrorTick g) = StateErrorTick { runStateErrorTick = fmap (fmap (\ (a, s', t) -> (f a, s', t))) . g }
+    fmap f (StateErrorTick g) = StateErrorTick { runStateErrorTick = \s -> 
+        case g s of
+            Left err -> Left err
+            Right (a, s', t) -> Right (f a, s', t) }
 
 
 instance Applicative StateErrorTick where
@@ -52,13 +55,13 @@ instance MonadState StateErrorTick where
     saveState = StateErrorTick { runStateErrorTick = \ s -> Right (s, s, 0) }
     
     putState :: Env -> StateErrorTick ()
+    putState r = StateErrorTick { runStateErrorTick = \ _ -> Right ((), r, 0) }
+
+
 instance MonadError StateErrorTick where
     
     throw :: String -> StateErrorTick a
     throw msg = StateErrorTick { runStateErrorTick = const (Left msg) }
-    
-    throw :: StateErrorTick a
-    throw = StateErrorTick { runStateErrorTick = const Nothing }
 
 
 instance MonadTick StateErrorTick where
