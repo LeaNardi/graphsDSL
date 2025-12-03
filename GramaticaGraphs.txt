@@ -3,6 +3,7 @@ comm ::=  skip
         | cond expr then comm else comm end
         | while expr do comm end
         | for identifier in expr do comm end
+        | visualize ( expr , expr )
         | print expr
         | identifier := expr
 
@@ -46,6 +47,7 @@ factor ::= number
         | graphexp
         | edgeexp
         | queueexp
+        | unionfindexp
         | listexp
         | unary
         | ( expr )
@@ -81,6 +83,14 @@ edgeexp ::= edge ( expr , expr , expr )
 listexp ::= [ exprlist ]
 
 queueexp ::= queue [ exprlist ]
+
+unionfindexp ::= unionfind [ ufpairlist ]
+
+ufpairlist ::= ufpair
+        | ufpair , ufpairlist
+        | ε
+
+ufpair ::= ( expr , expr )
 
 exprlist ::= expr
         | expr , exprlist

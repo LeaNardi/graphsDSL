@@ -307,6 +307,120 @@ evalExpr (FunCall GetEdges [graphExpr]) = do
       return (ListValue edgeValues)
     _ -> throw "GetEdges requires a Graph type"
 
+evalExpr (FunCall DeleteNode [graphExpr, nodeExpr]) = do
+  graphVal <- evalExpr graphExpr
+  nodeVal <- evalExpr nodeExpr
+  case graphVal of
+    GraphValue (Graph adjList) -> do
+      node <- case nodeVal of
+        StringValue s -> return s
+        _ -> throw "DeleteNode requires node to be String type"
+      -- Remove node from adjacency list and remove edges pointing to it
+      let adjList' = [(n, [(n2, w) | (n2, w) <- neighbors, n2 /= node]) 
+                     | (n, neighbors) <- adjList, n /= node]
+      return (GraphValue (Graph adjList'))
+    _ -> throw "DeleteNode requires a Graph type"
+
+evalExpr (FunCall AdjacentNodes [graphExpr, nodeExpr]) = do
+  graphVal <- evalExpr graphExpr
+  nodeVal <- evalExpr nodeExpr
+  case graphVal of
+    GraphValue (Graph adjList) -> do
+      node <- case nodeVal of
+        StringValue s -> return s
+        _ -> throw "AdjacentNodes requires node to be String type"
+      case lookup node adjList of
+        Just neighbors -> return (ListValue [StringValue n | (n, _) <- neighbors])
+        Nothing -> throw $ "Node '" ++ node ++ "' not found in graph"
+    _ -> throw "AdjacentNodes requires a Graph type"
+
+evalExpr (FunCall GraphComplement [graphExpr]) = do
+  graphVal <- evalExpr graphExpr
+  case graphVal of
+    GraphValue (Graph adjList) -> do
+      let nodes = map fst adjList
+      -- For each node, create edges to all nodes it's NOT connected to
+      let complement = [(n, [(n2, 1.0) | n2 <- nodes, n2 /= n, 
+                             not (any (\(neighbor, _) -> neighbor == n2) neighbors)])
+                       | (n, neighbors) <- adjList]
+      return (GraphValue (Graph complement))
+    _ -> throw "GraphComplement requires a Graph type"
+
+evalExpr (FunCall GraphUnion [graph1Expr, graph2Expr]) = do
+  graph1Val <- evalExpr graph1Expr
+  graph2Val <- evalExpr graph2Expr
+  case (graph1Val, graph2Val) of
+    (GraphValue (Graph adj1), GraphValue (Graph adj2)) -> do
+      -- Combine nodes from both graphs
+      let allNodes = map fst adj1 ++ [n | n <- map fst adj2, n `notElem` map fst adj1]
+      -- Union of edges for each node
+      let unionAdj = [(n, neighbors1 ++ [e | e <- neighbors2, e `notElem` neighbors1])
+                     | n <- allNodes
+                     , let neighbors1 = maybe [] id (lookup n adj1)
+                     , let neighbors2 = maybe [] id (lookup n adj2)]
+      return (GraphValue (Graph unionAdj))
+    _ -> throw "GraphUnion requires two Graph types"
+
+evalExpr (FunCall GraphIntersection [graph1Expr, graph2Expr]) = do
+  graph1Val <- evalExpr graph1Expr
+  graph2Val <- evalExpr graph2Expr
+  case (graph1Val, graph2Val) of
+    (GraphValue (Graph adj1), GraphValue (Graph adj2)) -> do
+      -- Only nodes present in both graphs
+      let nodes1 = map fst adj1
+      let nodes2 = map fst adj2
+      let commonNodes = nodes1 `intersect` nodes2
+      -- Only edges present in both graphs
+      let intersectAdj = [(n, neighbors1 `intersect` neighbors2)
+                         | n <- commonNodes
+                         , let neighbors1 = maybe [] id (lookup n adj1)
+                         , let neighbors2 = maybe [] id (lookup n adj2)]
+      return (GraphValue (Graph intersectAdj))
+    _ -> throw "GraphIntersection requires two Graph types"
+
+evalExpr (FunCall EsCiclico [graphExpr]) = do
+  graphVal <- evalExpr graphExpr
+  case graphVal of
+    GraphValue (Graph adjList) -> do
+      -- Check if graph has a cycle using DFS
+      let hasCycle = detectCycle adjList
+      return (BoolValue hasCycle)
+    _ -> throw "EsCiclico requires a Graph type"
+  where
+    detectCycle :: [(Node, [(Node, Weight)])] -> Bool
+    detectCycle adjList = any (dfs [] []) (map fst adjList)
+      where
+        dfs visited path node
+          | node `elem` path = True  -- Cycle detected
+          | node `elem` visited = False
+          | otherwise = 
+              let neighbors = maybe [] (map fst) (lookup node adjList)
+                  newPath = node : path
+                  newVisited = node : visited
+              in any (dfs newVisited newPath) neighbors
+
+evalExpr (FunCall EsConexo [graphExpr]) = do
+  graphVal <- evalExpr graphExpr
+  case graphVal of
+    GraphValue (Graph adjList) -> do
+      -- Check if graph is connected using BFS
+      case adjList of
+        [] -> return (BoolValue True)
+        ((firstNode, _):_) -> do
+          let allNodes = map fst adjList
+          let reachable = bfsReachable adjList [firstNode] [firstNode]
+          return (BoolValue (length reachable == length allNodes))
+    _ -> throw "EsConexo requires a Graph type"
+  where
+    bfsReachable :: [(Node, [(Node, Weight)])] -> [Node] -> [Node] -> [Node]
+    bfsReachable _ [] visited = visited
+    bfsReachable adjList (node:queue) visited =
+      let neighbors = maybe [] (map fst) (lookup node adjList)
+          newNeighbors = [n | n <- neighbors, n `notElem` visited]
+          newVisited = visited ++ newNeighbors
+          newQueue = queue ++ newNeighbors
+      in bfsReachable adjList newQueue newVisited
+
 -- Operaciones de List
 evalExpr (FunCall HeadList [listExpr]) = do
   listVal <- evalExpr listExpr
@@ -347,6 +461,48 @@ evalExpr (FunCall SortByWeight [listExpr]) = do
       let smaller = sortBy cmp [a | a <- xs, cmp a x == LT]
           larger = sortBy cmp [a | a <- xs, cmp a x /= LT]
       in smaller ++ [x] ++ larger
+
+evalExpr (FunCall InList [elemExpr, listExpr]) = do
+  elemVal <- evalExpr elemExpr
+  listVal <- evalExpr listExpr
+  case listVal of
+    ListValue xs -> return (BoolValue (elemVal `elem` xs))
+    _ -> throw "InList requires a List type"
+
+evalExpr (FunCall IsEmptyList [listExpr]) = do
+  listVal <- evalExpr listExpr
+  case listVal of
+    ListValue [] -> return (BoolValue True)
+    ListValue _ -> return (BoolValue False)
+    _ -> throw "IsEmptyList requires a List type"
+
+-- Operaciones de Queue
+evalExpr (FunCall QueueLen [queueExpr]) = do
+  queueVal <- evalExpr queueExpr
+  case queueVal of
+    QueueValue (Queue xs) -> return (IntValue (fromIntegral (length xs)))
+    _ -> throw "QueueLen requires a Queue type"
+
+evalExpr (FunCall Enqueue [queueExpr, elemExpr]) = do
+  queueVal <- evalExpr queueExpr
+  elemVal <- evalExpr elemExpr
+  case queueVal of
+    QueueValue (Queue xs) -> return (QueueValue (Queue (xs ++ [elemVal])))
+    _ -> throw "Enqueue requires a Queue type"
+
+evalExpr (FunCall Dequeue [queueExpr]) = do
+  queueVal <- evalExpr queueExpr
+  case queueVal of
+    QueueValue (Queue (_:xs)) -> return (QueueValue (Queue xs))
+    QueueValue (Queue []) -> throw "Dequeue called on empty queue"
+    _ -> throw "Dequeue requires a Queue type"
+
+evalExpr (FunCall IsEmptyQueue [queueExpr]) = do
+  queueVal <- evalExpr queueExpr
+  case queueVal of
+    QueueValue (Queue []) -> return (BoolValue True)
+    QueueValue (Queue _) -> return (BoolValue False)
+    _ -> throw "IsEmptyQueue requires a Queue type"
 
 -- Operaciones de UnionFind
 evalExpr (FunCall Find [nodeExpr, ufExpr]) = do
