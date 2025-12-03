@@ -25,6 +25,8 @@ main = do args <- getArgs
 -- ghc Main.hs
 -- Para ejecutar:
 -- ./Main Programas/01_arithmetic_simple.gph
+-- 
+
 
 -- Para ejecutar sin compilar:
 -- runghc Main.hs Programas/01_arithmetic_simple.gph 

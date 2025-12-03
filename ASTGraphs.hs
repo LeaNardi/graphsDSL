@@ -104,5 +104,6 @@ data Comm = Skip
           | Cond Expr Comm Comm
           | While Expr Comm
           | For Variable Expr Comm
+          | Visualize Expr (Maybe Expr) -- Visualize grafo (nombre archivo)
           | Print Expr
  deriving (Show, Eq)
