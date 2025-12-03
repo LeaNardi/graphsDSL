@@ -3,4 +3,12 @@ g := graph [
     ("2", [("1",23)] )
     ];
 h := addNode(g, "3");
-h := addEdge(h, "1", "3", 67)
+h := addEdge(h, "1", "3", 67);
+
+visualize(h) 
+
+//visualize(h, "Programas/Resultado.png") 
+//visualize (g, "Programas/Original.png")
+
+
+//Asi quedan las posibles llamadas a visualizar el grafo de acuerdo a si elegimos con uno o dos argumentos

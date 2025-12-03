@@ -23,6 +23,7 @@ parseSimpleComm = try parseSkip
                <|> try parseFor
                <|> try parsePrint
                <|> try parseAssignment
+               <|> try parseVisualize
 
 -- =====================================
 -- Parser de expresiones generales
@@ -274,3 +275,12 @@ parseAssignment = do
   reservedOp gdsl ":="
   expr <- parseExpr
   return $ AssignValue var expr
+
+parseVisualize :: Parser Comm
+parseVisualize = do
+  reserved gdsl "visualize" 
+  args <- parens gdsl $ sepBy parseExpr (comma gdsl) --lo hago asi para que pueda tener 1 o 2 argumentos
+  case args of
+    [graphExpr] -> return $ Visualize graphExpr Nothing
+    [graphExpr, fileNameExpr] -> return $ Visualize graphExpr (Just fileNameExpr)
+    _ -> fail "visualize espera 1 o 2 argumentos: visualize(grafo) o visualize(grafo, \"nombre.png\"" --Este error lo manejamos desde aca o desde otro lado?
