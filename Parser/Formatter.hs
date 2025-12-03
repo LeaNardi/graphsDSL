@@ -35,6 +35,9 @@ formatComm indent comm = case comm of
         indentStr indent ++ "  (" ++ show listExpr ++ ")\n" ++
         indentStr indent ++ "  (" ++ formatComm 0 body ++ ")"
     
+    Visualize graphExpr fileExpr ->
+        indentStr indent ++ "Visualize (" ++ show graphExpr ++ ") (" ++ show fileExpr ++ ")"
+    
     Print expr ->
         indentStr indent ++ "Print (" ++ show expr ++ ")"
 

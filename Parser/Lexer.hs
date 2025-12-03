@@ -16,5 +16,5 @@ gdsl = makeTokenParser (emptyDef {
                        "emptyList", "emptyQueue"],
     reservedOpNames = ["+", "-", "*", "/", "%", "?", 
                        ":", "=", "==", "<", ">", ":=", "|", "||",
-                       "&", "&&", "~", "!", "=node", ";", "->"]
+                       "&", "&&", "~", "!", ";", "->"]
   })

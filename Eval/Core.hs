@@ -4,6 +4,9 @@ import ASTGraphs ( Comm(..), Expr(..), BinOpType(..), CompOpType(..), FunctionTy
 import Eval.MonadClasses ( MonadError(..), MonadState(lookfor, update), MonadTick(..) )
 import Control.Monad ( when )
 import Data.List (intersect)
+import System.IO.Unsafe (unsafePerformIO)
+import System.Process (callCommand)
+import Visualization.GraphvizExporter (writeGraphToDotFile)
 
 evalComm :: (MonadState m, MonadError m, MonadTick m) => Comm -> m ()
 evalComm Skip = return ()
@@ -27,6 +30,20 @@ evalComm (For v listExpr c) = do val <- evalExpr listExpr
                                  case val of
                                    ListValue values -> mapM_ (\value -> do update v value; evalComm c) values
                                    _ -> throw "For loop requires a List"
+evalComm (Visualize graphExpr fileExpr) = do 
+  graphVal <- evalExpr graphExpr
+  fileVal <- evalExpr fileExpr
+  case (graphVal, fileVal) of
+    (GraphValue _, StringValue fileName) -> do
+      -- Se usa unsafePerformIO para permitir efectos secundarios dentro de la monada
+      let !_ = unsafePerformIO $ do
+            writeGraphToDotFile fileName graphVal
+            let pngFile = fileName ++ ".png"
+            -- Se llama a un comando externo para generar la imagen PNG desde el archivo DOT
+            callCommand $ "dot -Tpng " ++ fileName ++ " -o " ++ pngFile
+      return ()
+    (GraphValue _, _) -> throw "Visualize filename must be a String"
+    _ -> throw "Visualize requires a Graph value"
 evalComm (Print expr) = do evalExpr expr
                            return ()
 
