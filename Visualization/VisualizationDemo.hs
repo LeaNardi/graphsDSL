@@ -6,11 +6,7 @@ import Examples
 
 main :: IO ()
 main = do
-    putStrLn "=== GraphsDSL Visualization Demo ===\n"
-    
-    -- Create output directory
-    createDirectoryIfMissing True "output"
-    
-    -- Generate example graphs
-    generateAllExamples
+    putStrLn "=== 1, 2, 3 probando GraphsDSL ==\n"
+    createDirectoryIfMissing True "output" --directorio de outptut
+    generateAllExamples --generar los ejemplos
     

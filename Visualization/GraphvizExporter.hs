@@ -1,10 +1,9 @@
 module GraphvizExporter where
 
-import qualified Data.List as List
+--   traduce a formato graphviz los grafos (graphviz solamente entiende DOT) y exporta 
 
--- Simplified Graph representation for visualization
-data Graph = Graph [(String, [(String, Float)])] deriving (Show, Eq)
-data Value = GraphValue Graph | OtherValue deriving (Show, Eq)
+import qualified Data.List as List
+import ASTGraphs (Graph(..), Value(..), Node(..), Weight)
 
 -- Export a graph value to DOT format (Graphviz)
 exportGraphToDot :: Value -> Maybe String
@@ -15,7 +14,8 @@ exportGraphToDot _ = Nothing
 graphToDot :: Graph -> String
 graphToDot (Graph adjList) = 
     "graph G {\n" ++
-    "  // Graph settings\n" ++
+    "  layout=neato;\n" ++
+    "  overlap=false;\n" ++
     "  node [shape=circle, style=filled, fillcolor=lightblue];\n" ++
     "  edge [color=gray];\n" ++
     "  \n" ++
@@ -38,7 +38,8 @@ edgeDeclarations adjList =
   where
     allEdges = [(n1, n2, w) | (n1, neighbors) <- adjList, (n2, w) <- neighbors]
     -- For undirected graphs, keep only edges where n1 < n2 to avoid duplicates
-    uniqueEdges = List.nub [(min n1 n2, max n1 n2, w) | (n1, n2, w) <- allEdges]
+    --uniqueEdges = List.nub [(min n1 n2, max n1 n2, w) | (n1, n2, w) <- allEdges]
+    uniqueEdges = [ (u, v, w) | (u, v, w) <- allEdges, u < v ]
     formatEdge n1 n2 w = "  \"" ++ n1 ++ "\" -- \"" ++ n2 ++ "\" [label=\"" ++ formatWeight w ++ "\"];"
     formatWeight w = if w == fromInteger (round w) 
                      then show (round w :: Integer)
@@ -49,7 +50,7 @@ writeGraphToDotFile :: FilePath -> Value -> IO ()
 writeGraphToDotFile filepath graphValue = 
     case exportGraphToDot graphValue of
         Just dotContent -> writeFile filepath dotContent
-        Nothing -> putStrLn "Error: Not a valid graph value"
+        Nothing -> putStrLn "Error: No es un valor de grafo valido"
 
 -- Generate a simple example
 exampleUsage :: IO ()
