@@ -167,6 +167,7 @@ parseFunction = do
     "find" -> return $ FunCall Find args
     
     -- Booleanos
+    "metricClosure" -> return $ FunCall MetricClosure args
     "esCiclico" -> return $ FunCall EsCiclico args
     "esConexo" -> return $ FunCall EsConexo args
     "inList" -> return $ FunCall InList args

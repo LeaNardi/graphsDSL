@@ -3,7 +3,9 @@ module Eval.Core ( evalComm, evalExpr ) where
 import ASTGraphs ( Comm(..), Expr(..), BinOpType(..), CompOpType(..), FunctionType(..), Value(..), Graph(..), Node, Edge(..), Queue(..), UnionFind(..), Weight )
 import Eval.MonadClasses ( MonadError(..), MonadState(lookfor, update), MonadTick(..) )
 import Control.Monad ( when )
-import Data.List (intersect)
+import Data.List (intersect, elemIndex, foldl')
+import Data.Maybe (fromMaybe)
+
 
 evalComm :: (MonadState m, MonadError m, MonadTick m) => Comm -> m ()
 evalComm Skip = return ()
@@ -55,6 +57,98 @@ checkUndirectedGraph adjList = all checkEdge allEdges
       case lookup n2 adjList of
         Nothing -> False
         Just neighbors -> (n1, w) `elem` neighbors
+
+-- Lista de nodos del grafo (en orden fijo)
+graphNodes :: Graph -> [Node]
+graphNodes (Graph adjList) = map fst adjList
+
+-- Vecinos de un nodo en la lista de adyacencia
+neighborsOf :: Node -> [(Node, [(Node, Weight)])] -> [Node]
+neighborsOf n adjList =
+  case lookup n adjList of
+    Nothing        -> []
+    Just neighbors -> map fst neighbors
+
+isConnected :: Graph -> Bool
+isConnected (Graph []) = True
+isConnected (Graph ((start, neighbors) : rest)) =
+  let adjList = (start, neighbors) : rest
+      visited = dfs start adjList []
+  in length visited == length adjList
+
+dfs :: Node -> [(Node, [(Node, Weight)])] -> [Node] -> [Node]
+dfs n adjList visited
+  | n `elem` visited = visited
+  | otherwise =
+      let visited' = n : visited
+          ns       = neighborsOf n adjList
+      in foldl' (\acc m -> dfs m adjList acc) visited' ns
+
+lookupWeight :: Node -> Node -> [(Node, [(Node, Weight)])] -> Maybe Weight
+lookupWeight u v adjList =
+  case lookup u adjList of
+    Just neighbors ->
+      case lookup v neighbors of
+        Just w  -> Just w
+        Nothing -> case lookup v adjList of
+          Just neighbors2 -> lookup u neighbors2
+          Nothing         -> Nothing
+    Nothing -> case lookup v adjList of
+      Just neighbors2 -> lookup u neighbors2
+      Nothing         -> Nothing
+
+-- Clausura métrica (Floyd–Warshall) sobre Graph
+-- Asumimos que el grafo es conexo cuando llamamos a metricClosure.
+-- Si no lo es, algunas distancias quedan en infinito; 
+-- por eso vamos a cortar antes desde el DSL usando esConexo
+metricClosure :: Graph -> Graph
+metricClosure (Graph adjList) =
+  let nodes = map fst adjList
+      n     = length nodes
+      big :: Float
+      big = 1/0
+      idx :: Node -> Int
+      idx node = fromMaybe
+                   (error ("metricClosure: nodo no encontrado " ++ node))
+                   (elemIndex node nodes)
+      dist0 :: [[Float]]
+      dist0 =
+        [ [ initialDist i j | j <- [0..n-1] ]
+        | i <- [0..n-1]
+        ]
+      initialDist :: Int -> Int -> Float
+      initialDist i j
+        | i == j    = 0
+        | otherwise =
+            case lookupWeight (nodes !! i) (nodes !! j) adjList of
+              Just w  -> realToFrac w
+              Nothing -> big
+      -- Floyd–Warshall
+      distFinal :: [[Float]]
+      distFinal = floyd 0 dist0
+      floyd :: Int -> [[Float]] -> [[Float]]
+      floyd k dist
+        | k == n    = dist
+        | otherwise = floyd (k+1) (step k dist)
+      step :: Int -> [[Float]] -> [[Float]]
+      step k dist =
+        [ [ min (dist !! i !! j)
+                (dist !! i !! k + dist !! k !! j)
+          | j <- [0..n-1]
+          ]
+        | i <- [0..n-1]
+        ]
+      newAdj :: [(Node, [(Node, Weight)])]
+      newAdj =
+        [ (nodes !! i,
+            [ (nodes !! j, distFinal !! i !! j)
+            | j <- [0..n-1], i /= j
+            ]
+          )
+        | i <- [0..n-1]
+        ]
+  in Graph newAdj
+
 
 evalExpr :: (MonadState m, MonadError m, MonadTick m) => Expr -> m Value
 -- Literales
@@ -304,6 +398,21 @@ evalExpr (FunCall GetEdges [graphExpr]) = do
       return (ListValue edgeValues)
     _ -> throw
 
+evalExpr (FunCall EsConexo [graphExpr]) = do
+  graphVal <- evalExpr graphExpr
+  case graphVal of
+    GraphValue g@(Graph adjList) ->
+      return (BoolValue (isConnected g))
+    _ -> throw
+
+evalExpr (FunCall MetricClosure [graphExpr]) = do
+  graphVal <- evalExpr graphExpr
+  case graphVal of
+    GraphValue g@(Graph adjList) ->
+      -- opcional: podrías chequear de nuevo que sea conexo aquí
+      return (GraphValue (metricClosure g))
+    _ -> throw
+
 -- Operaciones de List
 evalExpr (FunCall HeadList [listExpr]) = do
   listVal <- evalExpr listExpr
@@ -344,6 +453,63 @@ evalExpr (FunCall SortByWeight [listExpr]) = do
       let smaller = sortBy cmp [a | a <- xs, cmp a x == LT]
           larger = sortBy cmp [a | a <- xs, cmp a x /= LT]
       in smaller ++ [x] ++ larger
+
+evalExpr (FunCall AddList [listExpr, elemExpr]) = do
+  listVal <- evalExpr listExpr
+  elemVal <- evalExpr elemExpr
+  case listVal of
+    ListValue xs ->
+      return (ListValue (xs ++ [elemVal]))
+    _ -> throw
+
+evalExpr (FunCall InList [elemExpr, listExpr]) = do
+  elemVal <- evalExpr elemExpr
+  listVal <- evalExpr listExpr
+  case listVal of
+    ListValue xs ->
+      return (BoolValue (elem elemVal xs))
+    _ -> throw
+
+-- Operaciones de Queue
+
+evalExpr (FunCall Enqueue [queueExpr, elemExpr]) = do
+  qVal <- evalExpr queueExpr
+  eVal <- evalExpr elemExpr
+  let normalized =
+        case eVal of
+          NodeValue n   -> NodeValue n
+          StringValue s -> NodeValue s   -- 👈 si viene como String, lo tratamos como Node
+          _             -> eVal
+  case qVal of
+    QueueValue (Queue xs) ->
+      return (QueueValue (Queue (xs ++ [normalized])))
+    _ -> throw
+
+
+evalExpr (FunCall DequeueNode [queueExpr]) = do
+  qVal <- evalExpr queueExpr
+  case qVal of
+    QueueValue (Queue (NodeValue n : xs)) ->
+      return (NodeValue n)
+    QueueValue (Queue (StringValue s : xs)) ->
+      return (NodeValue s)
+    QueueValue (Queue []) -> throw
+    _ -> throw
+    
+evalExpr (FunCall Dequeue [queueExpr]) = do
+  qVal <- evalExpr queueExpr
+  case qVal of
+    QueueValue (Queue (_:xs)) ->
+      return (QueueValue (Queue xs))
+    QueueValue (Queue []) -> throw
+    _ -> throw
+
+evalExpr (FunCall IsEmptyQueue [queueExpr]) = do
+  qVal <- evalExpr queueExpr
+  case qVal of
+    QueueValue (Queue xs) ->
+      return (BoolValue (null xs))
+    _ -> throw
 
 -- Operaciones de UnionFind
 evalExpr (FunCall Find [nodeExpr, ufExpr]) = do
@@ -399,4 +565,7 @@ evalExpr (FunCall Union [node1Expr, node2Expr, ufExpr]) = do
         Nothing -> error $ "Node not found in UnionFind: " ++ node
 
 -- Las no implementadas tiran error
-evalExpr (FunCall _ _) = throw
+-- evalExpr (FunCall _ _) = throw
+evalExpr (FunCall f args) =
+  error ("Eval ERROR: FunCall no implementado = " ++ show f ++
+         " con args = " ++ show args)

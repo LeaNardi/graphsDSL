@@ -23,6 +23,7 @@ main = do args <- getArgs
 
 -- Para compilar:
 -- ghc Main.hs
+-- ghc -package parsec --make Main.hs
 -- Para ejecutar:
 -- ./Main Programas/01_arithmetic_simple.gph
 

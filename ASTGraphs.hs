@@ -78,7 +78,8 @@ data FunctionType =
   -- Operaciones de Graph
     AddNode | DeleteNode | AddEdge | DeleteEdge
   | GraphComplement | GraphUnion | GraphIntersection
-  | GetEdges | AdjacentNodes | EsCiclico | EsConexo
+  | GetEdges | AdjacentNodes | EsCiclico | EsConexo 
+  | MetricClosure
   
   -- Operaciones de Edge
   | GetWeight | GetNode1 | GetNode2
