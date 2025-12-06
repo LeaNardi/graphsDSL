@@ -1,10 +1,12 @@
 g := graph [
-    ("1", [("2", 22), ("3", 55)] ),
-    ("2", [("1", 22), ("5", 33)] ),
+    ("1", [("2", 22), ("3", 55), ("5", 77)] ),
+    ("2", [("1", 22), ("5", 33), ("4", 66)] ),
     ("3", [("1", 55), ("4", 11)] ),
-    ("4", [("3", 11), ("5", 44)] ),
-    ("5", [("2", 33), ("4", 44)] )
+    ("4", [("3", 11), ("5", 44), ("2", 66)] ),
+    ("5", [("2", 33), ("4", 44), ("1", 77)] )
 ];
+
+visualize(g, "ejemplo_bfs");
 
 NodosVisitados := emptyList;
 Q := emptyQueue;
@@ -17,11 +19,13 @@ while !(isEmpty(Q)) do
     Q := dequeue(Q);
     
     for neighbor in adjacentNodes(g, node) do
-        cond !(inList(NodosVisitados, neighbor)) then
+        cond !(inList(neighbor, NodosVisitados)) then
             Q := enqueue(Q, neighbor);
             NodosVisitados := add(NodosVisitados, neighbor)
         else
             skip
         end
     end
-end
+end;
+
+//print(NodosVisitados) 
