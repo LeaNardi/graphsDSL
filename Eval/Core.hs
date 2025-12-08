@@ -523,12 +523,12 @@ evalExpr (FunCall Dequeue [queueExpr]) = do
     QueueValue (Queue []) -> throw "Dequeue llamado en una cola vacía"
     _ -> throw "Dequeue requiere un tipo Queue"
 
-evalExpr (FunCall DequeueNode [queueExpr]) = do
+evalExpr (FunCall Peek [queueExpr]) = do
   queueVal <- evalExpr queueExpr
   case queueVal of
     QueueValue (Queue (x:_)) -> return x
-    QueueValue (Queue []) -> throw "DequeueNode llamado en una cola vacía"
-    _ -> throw "DequeueNode requiere un tipo Queue"
+    QueueValue (Queue []) -> throw "Peek llamado en una cola vacía"
+    _ -> throw "Peek requiere un tipo Queue"
 
 evalExpr (FunCall IsEmptyQueue [queueExpr]) = do
   queueVal <- evalExpr queueExpr

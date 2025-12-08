@@ -213,8 +213,8 @@ print qLen;
 // enqueue: Agregar elemento a la cola
 myQueue := enqueue(myQueue, "fourth");
 
-// dequeueNode: Obtener primer elemento
-frontElem := dequeueNode(myQueue);
+// peek: Obtener primer elemento
+frontElem := peek(myQueue);
 print frontElem;
 
 // dequeue: Eliminar primer elemento

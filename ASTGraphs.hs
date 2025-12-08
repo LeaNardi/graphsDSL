@@ -89,7 +89,7 @@ data FunctionType =
   | InList | IsEmptyList
   
   -- Operaciones de Queue
-  | QueueLen | Enqueue | Dequeue | DequeueNode
+  | QueueLen | Enqueue | Dequeue | Peek
   | IsEmptyQueue
   
   -- Operaciones de UnionFind

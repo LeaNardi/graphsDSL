@@ -19,7 +19,7 @@ NodosVisitados := add(NodosVisitados, "1");
 bfsTree := addNode(bfsTree, "1");
 
 while !(isEmpty(Q)) do
-    node := dequeueNode(Q);
+    node := peek(Q);
     Q := dequeue(Q);
     
     for neighbor in adjacentEdges(g, node) do
