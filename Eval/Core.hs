@@ -40,10 +40,11 @@ evalComm (Visualize graphExpr fileExpr) = do
       -- Usamos unsafePerformIO para permitir efectos secundarios dentro de la monada
       let !_ = unsafePerformIO $ do
             createDirectoryIfMissing False defaultPath
-            writeGraphToDotFile (defaultPath ++ "/" ++ fileName) graphVal
-            let pngFile = (defaultPath ++ "/" ++ fileName) ++ ".png"
+            let dotFile = defaultPath ++ "/" ++ fileName ++ ".dot"
+            let pngFile = defaultPath ++ "/" ++ fileName ++ ".png"
+            writeGraphToDotFile dotFile graphVal
             -- Llamamos a un comando externo para generar la imagen PNG desde el archivo DOT
-            callCommand $ "dot -Tpng " ++ (defaultPath ++ "/" ++ fileName) ++ " -o " ++ pngFile
+            callCommand $ "dot -Tpng " ++ dotFile ++ " -o " ++ pngFile
       return ()
     (GraphValue _, _) -> throw "el nombre del archivo tiene que ser de tipo String"
     _ -> throw "Visualize necesita un grafo como primer argumento"
