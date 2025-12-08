@@ -140,6 +140,7 @@ parseFunction = do
     "intersection" -> return $ FunCall GraphIntersection args
     "getEdges" -> return $ FunCall GetEdges args
     "adjacentNodes" -> return $ FunCall AdjacentNodes args
+    "adjacentEdges" -> return $ FunCall AdjacentEdges args
     
     -- Operaciones sobre aristas
     "getWeight" -> return $ FunCall GetWeight args

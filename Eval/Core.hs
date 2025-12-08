@@ -342,6 +342,18 @@ evalExpr (FunCall AdjacentNodes [graphExpr, nodeExpr]) = do
         Just neighbors -> return (ListValue [StringValue n | (n, _) <- neighbors])
         Nothing -> throw $ "El Nodo '" ++ node ++ "' no se encontró en el grafo"
     _ -> throw "AdjacentNodes requiere un tipo Graph"
+evalExpr (FunCall AdjacentEdges [graphExpr, nodeExpr]) = do
+  graphVal <- evalExpr graphExpr
+  nodeVal <- evalExpr nodeExpr
+  case graphVal of
+    GraphValue (Graph adjList) -> do
+      node <- case nodeVal of
+        StringValue s -> return s
+        _ -> throw "AdjacentEdges requiere que el nodo sea de tipo String"
+      case lookup node adjList of
+        Just neighbors -> return (ListValue [EdgeValue (Edge node n w) | (n, w) <- neighbors]) -- Muestra aristas en orden nodo -> n (salientes)
+        Nothing -> throw $ "El Nodo '" ++ node ++ "' no se encontró en el grafo"
+    _ -> throw "AdjacentEdges requiere un tipo Graph"
 evalExpr (FunCall GraphComplement [graphExpr]) = do
   graphVal <- evalExpr graphExpr
   case graphVal of
