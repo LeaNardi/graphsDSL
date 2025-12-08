@@ -1,4 +1,4 @@
-// Otro BFS pero intentando ver el BFS tree
+// Otro BFS pero intentando ver el BFS en formato tree. Por ahora no guarda peso de aristas
 
 g := graph [
     ("1", [("2", 22), ("3", 55)] ),

@@ -3,7 +3,7 @@ module Eval.Core ( evalComm, evalExpr ) where
 import ASTGraphs ( Comm(..), Expr(..), BinOpType(..), CompOpType(..), FunctionType(..), Value(..), Graph(..), Node, Edge(..), Queue(..), UnionFind(..), Weight )
 import Eval.MonadClasses ( MonadError(..), MonadState(lookfor, update), MonadTick(..) )
 import Control.Monad ( when )
-import Data.List (intersect)
+import Data.List (intersect, intercalate)
 import System.IO.Unsafe (unsafePerformIO)
 import System.Process (callCommand)
 import Visualization.GraphvizExporter (writeGraphToDotFile)
@@ -35,17 +35,30 @@ evalComm (Visualize graphExpr fileExpr) = do
   fileVal <- evalExpr fileExpr
   case (graphVal, fileVal) of
     (GraphValue _, StringValue fileName) -> do
-      -- Se usa unsafePerformIO para permitir efectos secundarios dentro de la monada
+      -- Usamos unsafePerformIO para permitir efectos secundarios dentro de la monada
       let !_ = unsafePerformIO $ do
             writeGraphToDotFile fileName graphVal
             let pngFile = fileName ++ ".png"
-            -- Se llama a un comando externo para generar la imagen PNG desde el archivo DOT
+            -- Llamamos a un comando externo para generar la imagen PNG desde el archivo DOT
             callCommand $ "dot -Tpng " ++ fileName ++ " -o " ++ pngFile
       return ()
     (GraphValue _, _) -> throw "el nombre del archivo tiene que ser de tipo String"
     _ -> throw "Visualize necesita un grafo como primer argumento"
-evalComm (Print expr) = do evalExpr expr
-                           return ()
+evalComm (Print expr) = do 
+  val <- evalExpr expr
+  let !_ = unsafePerformIO $ putStrLn (formatValue val)
+  return ()
+  where 
+    formatValue (IntValue i)    = show i
+    formatValue (FloatValue f)  = show f
+    formatValue (BoolValue b)   = show b
+    formatValue (StringValue s) = s
+    formatValue (NodeValue n)   = n
+    formatValue (EdgeValue (Edge n1 n2 w)) = n1 ++ " --" ++ show w ++ "-> " ++ n2
+    formatValue (GraphValue g)  = show g
+    formatValue (ListValue vs)  = "[" ++ intercalate ", " (map formatValue vs) ++ "]"
+    formatValue (QueueValue (Queue vs)) = "Queue: " ++ show (map formatValue vs)
+    formatValue (UnionFindValue uf) = show uf
 
 -- Funciones auxiliares
 addNode :: Node -> Graph -> Graph
