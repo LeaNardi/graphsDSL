@@ -9,6 +9,8 @@ g := graph [
 ];
 
 h := deleteEdge(g, edge("D", "F", 0.0));
+// i := addEdge(g, edge("A", "J", 9.0));
 
 visualize(g, "Original");
 visualize(h, "AfterDeleteEdge")
+// visualize(i, "AfterAddEdge")
