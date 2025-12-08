@@ -193,14 +193,6 @@ edgeList := getEdges(g);
 sortedEdges := sortByWeight(edgeList);
 print sortedEdges;
 
-// headEdge: Obtener primer arista de la lista
-firstEdge := headEdge(sortedEdges);
-print firstEdge;
-
-// tailEdges: Obtener lista de aristas sin la primera
-remainingEdges := tailEdges(sortedEdges);
-print remainingEdges;
-
 // SECTION 13: Operaciones con Colas
 
 // Constructor de colas

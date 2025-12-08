@@ -85,7 +85,7 @@ data FunctionType =
   
   -- Operaciones de List
   | Len | TailList | AddList | HeadList
-  | SortByWeight | TailEdges | HeadEdge
+  | SortByWeight
   | InList | IsEmptyList
   
   -- Operaciones de Queue

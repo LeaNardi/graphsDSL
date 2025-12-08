@@ -467,7 +467,7 @@ evalExpr (FunCall SortByWeight [listExpr]) = do
     ListValue edges -> do
       let sortedEdges = sortByEdgeWeight edges
       return (ListValue sortedEdges)
-    _ -> throw "SortByWeight requiere un tipo List"
+    _ -> throw "SortByWeight requiere un tipo List de Edges"
   where
     sortByEdgeWeight :: [Value] -> [Value]
     sortByEdgeWeight values = 

@@ -153,8 +153,6 @@ parseFunction = do
     "tail" -> return $ FunCall TailList args
     "add" -> return $ FunCall AddList args
     "sortByWeight" -> return $ FunCall SortByWeight args
-    "headEdge" -> return $ FunCall HeadEdge args
-    "tailEdges" -> return $ FunCall TailEdges args
     
     -- Operaciones de Queue
     "queueLen" -> return $ FunCall QueueLen args
