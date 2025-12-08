@@ -334,6 +334,23 @@ evalExpr (FunCall DeleteNode [graphExpr, nodeExpr]) = do
                      | (n, neighbors) <- adjList, n /= node]
       return (GraphValue (Graph adjList'))
     _ -> throw "DeleteNode requiere un tipo Graph"
+
+evalExpr (FunCall DeleteEdge [graphExpr, edgeExpr]) = do
+  graphVal <- evalExpr graphExpr
+  edgeVal <- evalExpr edgeExpr
+  case graphVal of
+    GraphValue (Graph adjList) -> do
+      edge <- case edgeVal of
+        EdgeValue e -> return e
+        _ -> throw "DeleteEdge requiere que la arista sea de tipo Edge"
+      -- Eliminar arista de la lista de adyacencia
+      let (Edge node1 node2 _) = edge
+      let adjList' = [(n1, [(n2, w) | (n2, w) <- neighbors, not (n1 == node1 && n2 == node2) && not (n1 == node2 && n2 == node1)])
+                     | (n1, neighbors) <- adjList]
+      return (GraphValue (Graph adjList'))
+    _ -> throw "DeleteEdge requiere un tipo Graph"
+
+
 evalExpr (FunCall AdjacentNodes [graphExpr, nodeExpr]) = do
   graphVal <- evalExpr graphExpr
   nodeVal <- evalExpr nodeExpr
