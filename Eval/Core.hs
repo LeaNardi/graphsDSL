@@ -7,6 +7,7 @@ import Data.List (intersect, intercalate)
 import System.IO.Unsafe (unsafePerformIO)
 import System.Process (callCommand)
 import Visualization.GraphvizExporter (writeGraphToDotFile)
+import System.Directory (createDirectory, createDirectoryIfMissing)
 
 evalComm :: (MonadState m, MonadError m, MonadTick m) => Comm -> m ()
 evalComm Skip = return ()
@@ -33,14 +34,16 @@ evalComm (For v listExpr c) = do val <- evalExpr listExpr
 evalComm (Visualize graphExpr fileExpr) = do 
   graphVal <- evalExpr graphExpr
   fileVal <- evalExpr fileExpr
+  let defaultPath = "Outputs"
   case (graphVal, fileVal) of
     (GraphValue _, StringValue fileName) -> do
       -- Usamos unsafePerformIO para permitir efectos secundarios dentro de la monada
       let !_ = unsafePerformIO $ do
-            writeGraphToDotFile fileName graphVal
-            let pngFile = fileName ++ ".png"
+            createDirectoryIfMissing False defaultPath
+            writeGraphToDotFile (defaultPath ++ "/" ++ fileName) graphVal
+            let pngFile = (defaultPath ++ "/" ++ fileName) ++ ".png"
             -- Llamamos a un comando externo para generar la imagen PNG desde el archivo DOT
-            callCommand $ "dot -Tpng " ++ fileName ++ " -o " ++ pngFile
+            callCommand $ "dot -Tpng " ++ (defaultPath ++ "/" ++ fileName) ++ " -o " ++ pngFile
       return ()
     (GraphValue _, _) -> throw "el nombre del archivo tiene que ser de tipo String"
     _ -> throw "Visualize necesita un grafo como primer argumento"
