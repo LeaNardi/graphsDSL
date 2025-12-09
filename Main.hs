@@ -4,7 +4,7 @@ import System.Environment (getArgs)
 import Parser.Parser (parseGraphs)
 import Parser.Formatter (formatAST)
 import Eval.Eval (eval)
-import Eval.Formatter (formatEval)
+import Eval.Formatter (formatEval, formatOutput)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad (void)
 
@@ -23,9 +23,9 @@ main = do args <- getArgs
                                         Left err -> putStrLn "Error de evaluación:" >> putStrLn err
                                         Right (env, ticks, output) -> do
                                             -- putStrLn "\nResultado de la evaluación:"
-                                            putStrLn (formatEval (Right (env, ticks, output)))
-                                            -- Output
-                                            print output
+                                            -- putStrLn (formatEval (Right (env, ticks, output)))
+                                            putStrLn "\nSalida por pantalla:"
+                                            putStrLn (formatOutput (Right (env, ticks, output)))
 
                                 -- Para procesar sin mostrar AST y resutado Eval
                                 -- Right ast -> case eval ast of
