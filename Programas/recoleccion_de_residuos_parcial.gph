@@ -228,11 +228,24 @@ else
                         cond inList(y, visited) then
                             skip
                         else
-                            // y no visitado → lo agregamos a la cola
-                            q := enqueue(q, y);
+                            // check si ya tiene padre registrado
+                            hasParent := 0;
+                            for p in parent do
+                                cond (getNode1(p) == y) then
+                                    hasParent := 1
+                                else
+                                    skip
+                                end
+                            end;
 
-                            // registramos padre (VER LO DE USAR edge con peso 0)
-                            parent := addList(parent, edge(y, x, 0))
+                            cond (hasParent == 0) then
+                                // y no visitado y sin padre → lo agregamos a la cola
+                                q := enqueue(q, y);
+                                // registramos padre usando edge
+                                parent := addList(parent, edge(y, x, 0))
+                            else
+                                skip
+                            end
                         end
                     end
                 end
@@ -277,20 +290,45 @@ else
             actual := padre
         end;
 
-        // agregamos el nodo de inicio
+        // agregamos el nodo de inicio al final
         segmento := addList(segmento, prev);
 
-        // segmento está invertido → reconstruimos orden normal
-        segmentoOrdenado := emptyList;
-        while !isEmptyList(segmento) do
-            h := headList(segmento);
-            segmentoOrdenado := addList(segmentoOrdenado, h);
-            segmento := tailList(segmento)
+        // segmento = [next, ..., prev] - necesitamos [prev, ..., next]
+        // Para invertir con solo addList: leer elementos y reconstruir al revés
+        segmentoInvertido := emptyList;
+        
+        // Método: para cada posición i desde el final hasta el inicio
+        lenSeg := lenList(segmento);
+        i := lenSeg;
+        while (i > 0) do
+            // obtener elemento en posición (i-1)
+            tempList := segmento;
+            j := 1;
+            while (j < i) do
+                tempList := tailList(tempList);
+                j := j + 1
+            end;
+            elemento := headList(tempList);
+            
+            // agregar al final de invertido
+            segmentoInvertido := addList(segmentoInvertido, elemento);
+            i := i - 1
         end;
 
-        // concatenamos al camino global
-        for s in segmentoOrdenado do
-            caminoReal := addList(caminoReal, s)
+        // Ahora segmentoInvertido = [prev, ..., next] ✓
+
+        // concatenamos al camino global (evitando duplicar nodos)
+        cond isEmptyList(caminoReal) then
+            // primer segmento: agregar todo
+            for s in segmentoInvertido do
+                caminoReal := addList(caminoReal, s)
+            end
+        else
+            // segmentos siguientes: saltar primer nodo (ya está en caminoReal)
+            segmentoSinPrimero := tailList(segmentoInvertido);
+            for s in segmentoSinPrimero do
+                caminoReal := addList(caminoReal, s)
+            end
         end;
 
         // avanzar
