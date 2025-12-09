@@ -9,6 +9,8 @@ import System.Process (callCommand)
 import Visualization.GraphvizExporter (writeGraphToDotFile)
 import System.Directory (createDirectory, createDirectoryIfMissing)
 
+import Eval.MetricClosure ( metricClosure )
+
 evalComm :: (MonadState m, MonadError m, MonadTick m, MonadOutput m) => Comm -> m ()
 evalComm Skip = return ()
 evalComm (AssignValue v expr) = do val <- evalExpr expr
@@ -56,7 +58,7 @@ evalComm (Print expr) = do
     formatValue (BoolValue b)   = show b
     formatValue (StringValue s) = s
     formatValue (NodeValue n)   = n
-    formatValue (EdgeValue (Edge n1 n2 w)) = n1 ++ " --" ++ show w ++ "-> " ++ n2
+    formatValue (EdgeValue (Edge n1 n2 w)) = "(" ++ n1 ++ ", " ++ n2 ++ ", " ++ show w ++ ")"
     formatValue (GraphValue g)  = show g
     formatValue (ListValue vs)  = "[" ++ intercalate ", " (map formatValue vs) ++ "]"
     formatValue (QueueValue (Queue vs)) = "Queue: " ++ show (map formatValue vs)
@@ -459,11 +461,11 @@ evalExpr (FunCall TailList [listExpr]) = do
     ListValue [] -> throw "TailList llamado en una lista vacía"
     _ -> throw "TailList requiere un tipo List"
 
-evalExpr (FunCall Len [listExpr]) = do
+evalExpr (FunCall LenList [listExpr]) = do
   listVal <- evalExpr listExpr
   case listVal of
     ListValue xs -> return (IntValue (fromIntegral (length xs)))
-    _ -> throw "Len requiere un tipo List"
+    _ -> throw "LenList requiere un tipo List"
 
 evalExpr (FunCall SortByWeight [listExpr]) = do
   listVal <- evalExpr listExpr
@@ -589,6 +591,13 @@ evalExpr (FunCall Union [node1Expr, node2Expr, ufExpr]) = do
         Just parent | parent == node -> node
         Just parent -> findRoot parent pairs
         Nothing -> error $ "El Nodo '" ++ node ++ "' no se encontró en UnionFind"
+
+evalExpr (FunCall MetricClosure [graphExpr]) = do
+  graphVal <- evalExpr graphExpr
+  case graphVal of
+    GraphValue g ->
+      return (GraphValue (metricClosure g))
+    _ -> throw "MetricClosure requiere un tipo Graph"
 
 -- Las no implementadas tiran error
 evalExpr (FunCall _ _) = throw "La funcion no fue implementada o los argumentos son invalidos"

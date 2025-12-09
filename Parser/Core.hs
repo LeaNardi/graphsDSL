@@ -141,6 +141,7 @@ parseFunction = do
     "getEdges" -> return $ FunCall GetEdges args
     "adjacentNodes" -> return $ FunCall AdjacentNodes args
     "adjacentEdges" -> return $ FunCall AdjacentEdges args
+    "metricClosure" -> return $ FunCall MetricClosure args
     
     -- Operaciones sobre aristas
     "getWeight" -> return $ FunCall GetWeight args
@@ -148,10 +149,10 @@ parseFunction = do
     "getNode2" -> return $ FunCall GetNode2 args
     
     -- Operaciones de List
-    "len" -> return $ FunCall Len args
-    "head" -> return $ FunCall HeadList args
-    "tail" -> return $ FunCall TailList args
-    "add" -> return $ FunCall AddList args
+    "lenList" -> return $ FunCall LenList args
+    "headList" -> return $ FunCall HeadList args
+    "tailList" -> return $ FunCall TailList args
+    "addList" -> return $ FunCall AddList args
     "sortByWeight" -> return $ FunCall SortByWeight args
     
     -- Operaciones de Queue

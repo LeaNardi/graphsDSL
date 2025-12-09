@@ -80,12 +80,13 @@ data FunctionType =
   | GraphComplement | GraphUnion | GraphIntersection
   | GetEdges | AdjacentNodes | AdjacentEdges
   | EsCiclico | EsConexo
+  | MetricClosure
   
   -- Operaciones de Edge
   | GetWeight | GetNode1 | GetNode2
   
   -- Operaciones de List
-  | Len | TailList | AddList | HeadList
+  | LenList | TailList | AddList | HeadList
   | SortByWeight
   | InList | IsEmptyList
   
