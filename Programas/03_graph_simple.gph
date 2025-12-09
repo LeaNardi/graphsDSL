@@ -3,7 +3,7 @@ g := graph [
     ("2", [("1",23)] )
     ];
 h := addNode(g, "3");
-h := addEdge(h, "1", "3", 67);
+// h := addEdge(h, "1", "3", 67);
 
-visualize(g, "Original");
-visualize(h, "Resultado") 
+visualize(g, "Original")
+// visualize(h, "Resultado") 

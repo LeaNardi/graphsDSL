@@ -63,10 +63,7 @@ evalComm (Print expr) = do
     formatValue (UnionFindValue uf) = show uf
 
 -- Funciones auxiliares
-addNode :: Node -> Graph -> Graph
-addNode n (Graph g)
-  | n `elem` map fst g = Graph g
-  | otherwise = Graph ((n, []) : g)
+
 
 addEdge :: Node -> Node -> Weight -> Graph -> Graph
 addEdge u v w g = addDirectedEdge v u w (addDirectedEdge u v w g)
@@ -275,12 +272,15 @@ evalExpr (FunCall AddNode [graphExpr, nodeExpr]) = do
   graphVal <- evalExpr graphExpr
   nodeVal <- evalExpr nodeExpr
   case graphVal of
-    GraphValue graph -> do
+    GraphValue (Graph adjList) -> do
       node <- case nodeVal of
         StringValue s -> return s
         _ -> throw "AddNode requiere que el nodo sea de tipo String"
-      return (GraphValue (addNode node graph))
+      if node `elem` map fst adjList
+        then return (GraphValue (Graph adjList))
+        else return (GraphValue (Graph ((node, []) : adjList)))
     _ -> throw "AddNode requiere un tipo Graph"
+    
 evalExpr (FunCall AddEdge [graphExpr, node1Expr, node2Expr, weightExpr]) = do
   graphVal <- evalExpr graphExpr
   node1Val <- evalExpr node1Expr
