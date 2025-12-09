@@ -63,17 +63,13 @@ evalComm (Print expr) = do
     formatValue (UnionFindValue uf) = show uf
 
 -- Funciones auxiliares
-
-
-addEdge :: Node -> Node -> Weight -> Graph -> Graph
-addEdge u v w g = addDirectedEdge v u w (addDirectedEdge u v w g)
-
-addDirectedEdge :: Node -> Node -> Weight -> Graph -> Graph
-addDirectedEdge u v w (Graph []) = Graph [(u, [(v , w)])]
-addDirectedEdge u v w (Graph ((node, nodesWeights) : otros))
+addSimpleEdge :: Graph -> Edge -> Graph
+addSimpleEdge (Graph []) (Edge u v w)  = Graph [(u, [(v , w)])]
+addSimpleEdge (Graph ((node, nodesWeights) : otros)) (Edge u v w) 
   | u == node = Graph ((node, (v, w) : nodesWeights) : otros)
-  | otherwise = case addDirectedEdge u v w (Graph otros) of
+  | otherwise = case addSimpleEdge (Graph otros) (Edge u v w)  of
                   Graph otros' -> Graph ((node, nodesWeights) : otros')
+
 
 -- Verifica que para cada arista (n1, n2, w), exista la arista (n2, n1, w)
 checkUndirectedGraph :: [(Node, [(Node, Float)])] -> Bool
@@ -280,25 +276,17 @@ evalExpr (FunCall AddNode [graphExpr, nodeExpr]) = do
         then return (GraphValue (Graph adjList))
         else return (GraphValue (Graph ((node, []) : adjList)))
     _ -> throw "AddNode requiere un tipo Graph"
-    
-evalExpr (FunCall AddEdge [graphExpr, node1Expr, node2Expr, weightExpr]) = do
+
+evalExpr (FunCall AddEdge [graphExpr, edgeExpr]) = do
   graphVal <- evalExpr graphExpr
-  node1Val <- evalExpr node1Expr
-  node2Val <- evalExpr node2Expr
-  weightVal <- evalExpr weightExpr
+  edgeVal <- evalExpr edgeExpr
   case graphVal of
     GraphValue graph -> do
-      node1 <- case node1Val of
-        StringValue s -> return s
-        _ -> throw "AddEdge requiere que el nodo1 sea de tipo String"
-      node2 <- case node2Val of
-        StringValue s -> return s
-        _ -> throw "AddEdge requiere que el nodo2 sea de tipo String"
-      weight <- case weightVal of
-        FloatValue w -> return w
-        IntValue i -> return (fromInteger i)
-        _ -> throw "AddEdge requiere que el peso sea de tipo Float o Int"
-      return (GraphValue (addEdge node1 node2 weight graph))
+      case edgeVal of
+        EdgeValue e -> do
+          let (Edge node1 node2 weight) = e
+          return (GraphValue (addSimpleEdge (addSimpleEdge graph (Edge node1 node2 weight)) (Edge node2 node1 weight)))
+        _ -> throw "AddEdge requiere que la arista sea de tipo Edge"
     _ -> throw "AddEdge requiere un tipo Graph"
 
 evalExpr (FunCall GetEdges [graphExpr]) = do
