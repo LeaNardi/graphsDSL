@@ -99,7 +99,7 @@ exprlist ::= expr
 functioncall ::= functionname ( arglist )
 
 functionname ::= addNode | deleteNode | addEdge | deleteEdge
-        | complement | graphUnion | intersection | getEdges | adjacentNodes | adjacentEdges
+        | graphComplement | graphUnion | graphIntersection | getEdges | adjacentNodes | adjacentEdges
         | getWeight | getNode1 | getNode2
         | lenList | headList | tailList | addList | sortByWeight
         | queueLen | enqueue | dequeue | peek | isEmpty

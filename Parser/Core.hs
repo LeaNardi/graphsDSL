@@ -135,9 +135,9 @@ parseFunction = do
     "deleteNode" -> return $ FunCall DeleteNode args
     "addEdge" -> return $ FunCall AddEdge args
     "deleteEdge" -> return $ FunCall DeleteEdge args
-    "complement" -> return $ FunCall GraphComplement args
+    "graphComplement" -> return $ FunCall GraphComplement args
     "graphUnion" -> return $ FunCall GraphUnion args
-    "intersection" -> return $ FunCall GraphIntersection args
+    "graphIntersection" -> return $ FunCall GraphIntersection args
     "getEdges" -> return $ FunCall GetEdges args
     "adjacentNodes" -> return $ FunCall AdjacentNodes args
     "adjacentEdges" -> return $ FunCall AdjacentEdges args
