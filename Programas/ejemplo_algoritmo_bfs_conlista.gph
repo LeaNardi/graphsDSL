@@ -30,4 +30,4 @@ while !(isEmptyQueue(Q)) do
     end
 end;
 
-//print(NodosVisitados) 
+print(NodosVisitados) 
