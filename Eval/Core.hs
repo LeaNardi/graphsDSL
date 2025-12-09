@@ -19,14 +19,12 @@ evalComm (Cond expr c1 c2) = do val <- evalExpr expr
                                 case val of
                                   BoolValue True -> evalComm c1
                                   BoolValue False -> evalComm c2
-                                  IntValue i -> if i /= 0 then evalComm c1 else evalComm c2 -- Admite enteros como expresion condicional
-                                  _ -> throw "La expresion condicional tiene que ser Bool o Int"
+                                  _ -> throw "La expresion condicional tiene que ser Bool"
 evalComm (While expr c) = do val <- evalExpr expr
                              case val of
                                BoolValue True -> evalComm (Seq c (While expr c))
                                BoolValue False -> return ()
-                               IntValue i -> when (i /= 0) (evalComm (Seq c (While expr c))) -- Admite enteros como expresion condicional
-                               _ -> throw "La condicion del While tiene que ser Bool o Int"
+                               _ -> throw "La condicion del While tiene que ser Bool"
 evalComm (For v listExpr c) = do val <- evalExpr listExpr
                                  case val of
                                    ListValue values -> mapM_ (\value -> do update v value; evalComm c) values
@@ -149,9 +147,7 @@ evalExpr (Not e) = do
   val <- evalExpr e
   case val of
     BoolValue b -> return (BoolValue (not b))
-    IntValue 0 -> return (BoolValue True)
-    IntValue _ -> return (BoolValue False)
-    _ -> throw "La operacion Not requiere Bool o Int"
+    _ -> throw "La operacion Not requiere que todos sean Bool"
 
 evalExpr (Comparison op l r) = do
   lval <- evalExpr l
@@ -177,21 +173,17 @@ evalExpr (Comparison op l r) = do
       _ -> throw "La comparacion Greater than requiere tipos numericos (Int o Float)"
     And -> case (lval, rval) of
       (BoolValue l', BoolValue r') -> return (BoolValue (l' && r'))
-      (IntValue l', IntValue r') -> return (BoolValue (l' /= 0 && r' /= 0))
-      _ -> throw "La operacion And requiere tipos Bool o Int"
+      _ -> throw "La operacion And requiere que todos sean Bool"
     Or -> case (lval, rval) of
       (BoolValue l', BoolValue r') -> return (BoolValue (l' || r'))
-      (IntValue l', IntValue r') -> return (BoolValue (l' /= 0 || r' /= 0))
-      _ -> throw "La operacion Or requiere tipos Bool o Int"
+      _ -> throw "La operacion Or requiere que todos sean Bool"
 -- Expresiones Condicionales
 evalExpr (Question cond thenE elseE) = do
   condVal <- evalExpr cond
   case condVal of
     BoolValue False -> evalExpr elseE
     BoolValue True -> evalExpr thenE
-    IntValue 0 -> evalExpr elseE
-    IntValue _ -> evalExpr thenE
-    _ -> throw "El operador ternario requiere que la condicion sea Bool o Int"
+    _ -> throw "El operador ternario requiere que la condicion sea Bool"
 
 -- Constructores de grafos
 evalExpr (ValuedGraph nodeList) = do
@@ -381,7 +373,7 @@ evalExpr (FunCall GraphComplement [graphExpr]) = do
     GraphValue (Graph adjList) -> do
       let nodes = map fst adjList
       -- Para cada nodo, crea aristas a todos los nodos a los que NO está conectado
-      let complement = [(n, [(n2, 1.0) | n2 <- nodes, n2 /= n, 
+      let complement = [(n, [(n2, 0.0) | n2 <- nodes, n2 /= n, 
                              not (any (\(neighbor, _) -> neighbor == n2) neighbors)])
                        | (n, neighbors) <- adjList]
       return (GraphValue (Graph complement))

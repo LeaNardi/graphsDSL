@@ -64,9 +64,9 @@ ternary := x > 5 ? "más grande" : "más chico";
 
 // Conditional statement
 cond x > 5 then
-    //print "x es más grande que 5"
+    print "x es más grande que 5"
 else
-    //print "x es 5 o menos"
+    print "x es 5 o menos"
 end;
 
 // Loop While
@@ -99,7 +99,7 @@ g2 := deleteNode(g1, "E");
 g3 := addEdge(g, "A", "D", 10);
 
 // deleteEdge: Eliminar una arista entre nodos
-g4 := deleteEdge(g3, "A", "D");
+g4 := deleteEdge(g3, edge("A", "D", 10));
 
 // SECTION 8: Funciones de Análisis de Grafos
 
@@ -228,7 +228,7 @@ uf := unionfind [
 
 // find: Encontrar representante de un elemento
 repA := find("A", uf);
-//print repA;
+print repA;
 
 // union: Unir dos conjuntos
 uf := union("A", "B", uf);
@@ -237,8 +237,8 @@ uf := union("C", "D", uf);
 // Después de la unión, A y B deberían tener el mismo representante
 repA2 := find("A", uf);
 repB2 := find("B", uf);
-//print repA2;
-//print repB2;
+print repA2;
+print repB2;
 
 // SECTION 15: For Loop with Collections
 
@@ -254,10 +254,10 @@ total := 0;
 for num in numList do
     total := total + num
 end;
-//print total;
+print total;
 
 // SECTION 16: Visualization
 // visualize: Exportar grafo a formato Graphviz
-visualize(g, "Programas/demo_original");
-visualize(compG, "Programas/demo_complement");
-visualize(unionG, "Programas/demo_union")
+visualize(g, "demo_original");
+visualize(compG, "demo_complement");
+visualize(unionG, "demo_union")
