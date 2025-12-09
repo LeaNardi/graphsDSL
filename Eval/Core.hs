@@ -65,12 +65,15 @@ evalComm (Print expr) = do
 -- Funciones auxiliares
 addSimpleEdge :: Graph -> Edge -> Graph
 addSimpleEdge (Graph []) (Edge u v w)  = Graph [(u, [(v , w)])]
-addSimpleEdge (Graph ((node, nodesWeights) : otros)) (Edge u v w) 
-  | u == node = Graph ((node, (v, w) : nodesWeights) : otros)
-  | otherwise = case addSimpleEdge (Graph otros) (Edge u v w)  of
-                  Graph otros' -> Graph ((node, nodesWeights) : otros')
-
-
+addSimpleEdge (Graph ((node, nodesWeights) : remaining)) (Edge u v w) 
+  | u == node = let listOfNodes = map fst nodesWeights
+                in if v `elem` listOfNodes
+                   then let updatedWeights = [(n, if n == v then w else wt) | (n, wt) <- nodesWeights]
+                        in Graph ((node, updatedWeights) : remaining)
+                   else Graph ((node, (v, w) : nodesWeights) : remaining)
+  | otherwise = let Graph remaining' = addSimpleEdge (Graph remaining) (Edge u v w)
+                in Graph ((node, nodesWeights) : remaining')
+                    
 -- Verifica que para cada arista (n1, n2, w), exista la arista (n2, n1, w)
 checkUndirectedGraph :: [(Node, [(Node, Float)])] -> Bool
 checkUndirectedGraph adjList = all checkEdge allEdges
