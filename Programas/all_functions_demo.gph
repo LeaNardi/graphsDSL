@@ -94,7 +94,7 @@ g1 := addNode(g, "E");
 g2 := deleteNode(g1, "E");
 
 // addEdge: Agregar una arista ponderada entre nodos
-g3 := addEdge(g, "A", "D", 10);
+g3 := addEdge(g, edge("A", "D", 10));
 
 // deleteEdge: Eliminar una arista entre nodos
 g4 := deleteEdge(g3, edge("A", "D", 10));
