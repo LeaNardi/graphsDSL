@@ -86,7 +86,8 @@ data FunctionType =
   | GetWeight | GetNode1 | GetNode2
   
   -- Operaciones de List
-  | LenList | TailList | AddList | HeadList
+  | LenList | AppendList | ConsList | ConcatList
+  | HeadList | LastList | TailList
   | SortByWeight
   | InList | IsEmptyList
   

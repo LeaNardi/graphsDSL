@@ -447,6 +447,33 @@ evalExpr (FunCall EsConexo [graphExpr]) = do
       in bfsReachable adjList newQueue newVisited
 
 -- Operaciones de List
+evalExpr (FunCall LenList [listExpr]) = do
+  listVal <- evalExpr listExpr
+  case listVal of
+    ListValue xs -> return (IntValue (fromIntegral (length xs)))
+    _ -> throw "LenList requiere un tipo List"
+
+evalExpr (FunCall AppendList [listExpr, elemExpr]) = do
+  listVal <- evalExpr listExpr
+  elemVal <- evalExpr elemExpr
+  case listVal of
+    ListValue xs -> return (ListValue (xs ++ [elemVal]))
+    _ -> throw "AppendList requiere un tipo List"
+
+evalExpr (FunCall ConsList [listExpr, elemExpr]) = do
+  listVal <- evalExpr listExpr
+  elemVal <- evalExpr elemExpr
+  case listVal of
+    ListValue xs -> return (ListValue (elemVal:xs))
+    _ -> throw "ConsList requiere un tipo List"
+
+evalExpr (FunCall ConcatList [listExpr1, listExpr2]) = do
+  listVal1 <- evalExpr listExpr1
+  listVal2 <- evalExpr listExpr2
+  case (listVal1, listVal2) of
+    (ListValue xs, ListValue ys) -> return (ListValue (xs ++ ys))
+    _ -> throw "ConcatList requiere de tipos List"
+
 evalExpr (FunCall HeadList [listExpr]) = do
   listVal <- evalExpr listExpr
   case listVal of
@@ -454,18 +481,19 @@ evalExpr (FunCall HeadList [listExpr]) = do
     ListValue [] -> throw "HeadList llamado en una lista vacía"
     _ -> throw "HeadList requiere un tipo List"
 
+evalExpr (FunCall LastList [listExpr]) = do
+  listVal <- evalExpr listExpr
+  case listVal of
+    ListValue [] -> throw "LastList llamado en una lista vacía"
+    ListValue (xs) -> return (last xs)
+    _ -> throw "LastList requiere un tipo List"
+
 evalExpr (FunCall TailList [listExpr]) = do
   listVal <- evalExpr listExpr
   case listVal of
     ListValue (_:xs) -> return (ListValue xs)
     ListValue [] -> throw "TailList llamado en una lista vacía"
     _ -> throw "TailList requiere un tipo List"
-
-evalExpr (FunCall LenList [listExpr]) = do
-  listVal <- evalExpr listExpr
-  case listVal of
-    ListValue xs -> return (IntValue (fromIntegral (length xs)))
-    _ -> throw "LenList requiere un tipo List"
 
 evalExpr (FunCall SortByWeight [listExpr]) = do
   listVal <- evalExpr listExpr
@@ -500,13 +528,6 @@ evalExpr (FunCall IsEmptyList [listExpr]) = do
     ListValue [] -> return (BoolValue True)
     ListValue _ -> return (BoolValue False)
     _ -> throw "IsEmptyList requiere un tipo List"
-
-evalExpr (FunCall AddList [listExpr, elemExpr]) = do
-  listVal <- evalExpr listExpr
-  elemVal <- evalExpr elemExpr
-  case listVal of
-    ListValue xs -> return (ListValue (xs ++ [elemVal]))
-    _ -> throw "AddList requiere un tipo List"
 
 -- Operaciones de Queue
 evalExpr (FunCall QueueLen [queueExpr]) = do

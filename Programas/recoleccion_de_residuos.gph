@@ -88,7 +88,7 @@ for e in edges do
         skip
     else
         uf := union(r1, r2, uf);
-        mst := addList(mst, e)
+        mst := appendList(mst, e)
     end
 end;
 
@@ -111,7 +111,7 @@ while !isEmptyQueue(queue2) do
     cond inList(x, visited2) then
         skip
     else
-        visited2 := addList(visited2, x);
+        visited2 := appendList(visited2, x);
 
         for e in mst do
             a := getNode1(e);
@@ -230,7 +230,7 @@ else
             cond inList(x, visited) then
                 skip
             else
-                visited := addList(visited, x);
+                visited := appendList(visited, x);
 
                 // si encontramos el destino terminamos BFS
                 cond (x == next) then
@@ -246,7 +246,7 @@ else
                             q := enqueue(q, y);
 
                             // registramos padre (VER LO DE USAR edge con peso 0)
-                            parent := addList(parent, edge(y, x, 0))
+                            parent := appendList(parent, edge(y, x, 0))
                         end
                     end
                 end
@@ -267,7 +267,7 @@ else
 
         // armamos camino invertido: next → prev
         while !(actual == prev) do
-            segmento := addList(segmento, actual);
+            segmento := appendList(segmento, actual);
 
             // buscamos su padre
             padre := prev; // para el compilador, default
@@ -292,19 +292,19 @@ else
         end;
 
         // agregamos el nodo de inicio
-        segmento := addList(segmento, prev);
+        segmento := appendList(segmento, prev);
 
         // segmento está invertido → reconstruimos orden normal
         segmentoOrdenado := emptyList;
         while !isEmptyList(segmento) do
             h := headList(segmento);
-            segmentoOrdenado := addList(segmentoOrdenado, h);
+            segmentoOrdenado := appendList(segmentoOrdenado, h);
             segmento := tailList(segmento)
         end;
 
         // concatenamos al camino global
         for s in segmentoOrdenado do
-            caminoReal := addList(caminoReal, s)
+            caminoReal := appendList(caminoReal, s)
         end;
 
         // avanzar

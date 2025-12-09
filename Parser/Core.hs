@@ -150,9 +150,12 @@ parseFunction = do
     
     -- Operaciones de List
     "lenList" -> return $ FunCall LenList args
+    "appendList" -> return $ FunCall AppendList args
+    "consList" -> return $ FunCall ConsList args
+    "concatList" -> return $ FunCall ConcatList args
     "headList" -> return $ FunCall HeadList args
+    "lastList" -> return $ FunCall LastList args
     "tailList" -> return $ FunCall TailList args
-    "addList" -> return $ FunCall AddList args
     "sortByWeight" -> return $ FunCall SortByWeight args
     
     -- Operaciones de Queue

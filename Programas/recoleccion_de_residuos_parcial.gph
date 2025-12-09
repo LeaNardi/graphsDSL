@@ -74,7 +74,7 @@ for e in edges do
         skip
     else
         uf := union(r1, r2, uf);
-        mst := addList(mst, e)
+        mst := appendList(mst, e)
     end
 end;
 
@@ -97,7 +97,7 @@ while !isEmptyQueue(queue2) do
     cond inList(x, visited2) then
         skip
     else
-        visited2 := addList(visited2, x);
+        visited2 := appendList(visited2, x);
 
         for e in mst do
             a := getNode1(e);
@@ -247,7 +247,7 @@ else
             cond inList(x, visited) then
                 skip
             else
-                visited := addList(visited, x);
+                visited := appendList(visited, x);
 
                 // si encontramos el destino terminamos BFS
                 cond (x == next) then
@@ -273,7 +273,7 @@ else
                                 // y no visitado y sin padre → lo agregamos a la cola
                                 q := enqueue(q, y);
                                 // registramos padre usando edge
-                                parent := addList(parent, edge(y, x, 0))
+                                parent := appendList(parent, edge(y, x, 0))
                             else
                                 skip
                             end
@@ -297,7 +297,7 @@ else
 
         // armamos camino invertido: next → prev
         while !(actual == prev) do
-            segmento := addList(segmento, actual);
+            segmento := appendList(segmento, actual);
 
             // buscamos su padre
             padre := prev; // para el compilador, default
@@ -322,10 +322,10 @@ else
         end;
 
         // agregamos el nodo de inicio al final
-        segmento := addList(segmento, prev);
+        segmento := appendList(segmento, prev);
 
         // segmento = [next, ..., prev] - necesitamos [prev, ..., next]
-        // Para invertir con solo addList: leer elementos y reconstruir al revés
+        // Para invertir con solo appendList: leer elementos y reconstruir al revés
         segmentoInvertido := emptyList;
         
         // Método: para cada posición i desde el final hasta el inicio
@@ -342,7 +342,7 @@ else
             elemento := headList(tempList);
             
             // agregar al final de invertido
-            segmentoInvertido := addList(segmentoInvertido, elemento);
+            segmentoInvertido := appendList(segmentoInvertido, elemento);
             i := i - 1
         end;
 
@@ -352,13 +352,13 @@ else
         cond isEmptyList(caminoReal) then
             // primer segmento: agregar todo
             for s in segmentoInvertido do
-                caminoReal := addList(caminoReal, s)
+                caminoReal := appendList(caminoReal, s)
             end
         else
             // segmentos siguientes: saltar primer nodo (ya está en caminoReal)
             segmentoSinPrimero := tailList(segmentoInvertido);
             for s in segmentoSinPrimero do
-                caminoReal := addList(caminoReal, s)
+                caminoReal := appendList(caminoReal, s)
             end
         end;
 
@@ -386,7 +386,7 @@ else
         cond inList(x, visited) then
             skip
         else
-            visited := addList(visited, x);
+            visited := appendList(visited, x);
 
             cond (x == primerNodo) then
                 found := 1
@@ -408,7 +408,7 @@ else
 
                         cond (hasParent == 0) then
                             q := enqueue(q, y);
-                            parent := addList(parent, edge(y, x, 0))
+                            parent := appendList(parent, edge(y, x, 0))
                         else
                             skip
                         end
@@ -429,7 +429,7 @@ else
     actual := primerNodo;
 
     while !(actual == ultimoNodo) do
-        segmento := addList(segmento, actual);
+        segmento := appendList(segmento, actual);
 
         padre := ultimoNodo;
         foundParent := 0;
@@ -452,7 +452,7 @@ else
         actual := padre
     end;
 
-    segmento := addList(segmento, ultimoNodo);
+    segmento := appendList(segmento, ultimoNodo);
 
     // Invertir segmento de retorno
     lenSeg := lenList(segmento);
@@ -466,14 +466,14 @@ else
             j := j + 1
         end;
         elemento := headList(tempList);
-        segmentoInvertido := addList(segmentoInvertido, elemento);
+        segmentoInvertido := appendList(segmentoInvertido, elemento);
         i := i - 1
     end;
 
     // Agregar segmento de retorno (sin duplicar último nodo)
     segmentoSinPrimero := tailList(segmentoInvertido);
     for s in segmentoSinPrimero do
-        caminoReal := addList(caminoReal, s)
+        caminoReal := appendList(caminoReal, s)
     end
 end;
 
