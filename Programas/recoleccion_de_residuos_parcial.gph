@@ -174,7 +174,38 @@ else
         // Avanzamos
         prev := next;
         rest := tailList(rest)
-    end
+    end;
+
+    // AGREGAR COSTO DE RETORNO al nodo inicial
+    primerNodo := headList(visited2);
+    ultimoNodo := prev;  // prev es el último nodo después del loop
+
+    // Buscar costo de retorno en el grafo métrico
+    wRetorno := 0;
+    foundEdgeRetorno := 0;
+
+    for e in edgesMetric do
+        cond (foundEdgeRetorno == 0) then
+            u := getNode1(e);
+            v := getNode2(e);
+
+            cond ((u == ultimoNodo) && (v == primerNodo)) then
+                wRetorno := getWeight(e);
+                foundEdgeRetorno := 1
+            else
+                cond ((u == primerNodo) && (v == ultimoNodo)) then
+                    wRetorno := getWeight(e);
+                    foundEdgeRetorno := 1
+                else
+                    skip
+                end
+            end
+        else
+            skip
+        end
+    end;
+
+    total := total + wRetorno
 end;
 
 print "Costo total del recorrido:";
@@ -334,6 +365,115 @@ else
         // avanzar
         prev := next;
         rest := tailList(rest)
+    end;
+
+    // AGREGAR CAMINO DE RETORNO al inicio
+    primerNodo := headList(visited2);
+    ultimoNodo := prev;  // prev es el último nodo
+
+    // BFS desde ultimoNodo hasta primerNodo
+    q := queue[];
+    q := enqueue(q, ultimoNodo);
+
+    visited := emptyList;
+    parent := emptyList;
+    found := 0;
+
+    while !isEmptyQueue(q) do
+        x := peek(q);
+        q := dequeue(q);
+
+        cond inList(x, visited) then
+            skip
+        else
+            visited := addList(visited, x);
+
+            cond (x == primerNodo) then
+                found := 1
+            else
+                neigh := adjacentNodes(g2, x);
+
+                for y in neigh do
+                    cond inList(y, visited) then
+                        skip
+                    else
+                        hasParent := 0;
+                        for p in parent do
+                            cond (getNode1(p) == y) then
+                                hasParent := 1
+                            else
+                                skip
+                            end
+                        end;
+
+                        cond (hasParent == 0) then
+                            q := enqueue(q, y);
+                            parent := addList(parent, edge(y, x, 0))
+                        else
+                            skip
+                        end
+                    end
+                end
+            end
+        end;
+
+        cond (found == 1) then
+            q := queue[]
+        else
+            skip
+        end
+    end;
+
+    // Reconstruir camino de retorno
+    segmento := emptyList;
+    actual := primerNodo;
+
+    while !(actual == ultimoNodo) do
+        segmento := addList(segmento, actual);
+
+        padre := ultimoNodo;
+        foundParent := 0;
+        for p in parent do
+            cond (foundParent == 0) then
+                nodoP := getNode1(p);
+                nodoPadre := getNode2(p);
+
+                cond (nodoP == actual) then
+                    padre := nodoPadre;
+                    foundParent := 1
+                else
+                    skip
+                end
+            else
+                skip
+            end
+        end;
+
+        actual := padre
+    end;
+
+    segmento := addList(segmento, ultimoNodo);
+
+    // Invertir segmento de retorno
+    lenSeg := lenList(segmento);
+    segmentoInvertido := emptyList;
+    i := lenSeg;
+    while (i > 0) do
+        tempList := segmento;
+        j := 1;
+        while (j < i) do
+            tempList := tailList(tempList);
+            j := j + 1
+        end;
+        elemento := headList(tempList);
+        segmentoInvertido := addList(segmentoInvertido, elemento);
+        i := i - 1
+    end;
+
+    // Agregar segmento de retorno (sin duplicar último nodo)
+    segmentoSinPrimero := tailList(segmentoInvertido);
+    for s in segmentoSinPrimero do
+        caminoReal := addList(caminoReal, s)
     end
 end;
 
