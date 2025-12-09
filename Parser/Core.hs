@@ -159,7 +159,7 @@ parseFunction = do
     "enqueue" -> return $ FunCall Enqueue args
     "dequeue" -> return $ FunCall Dequeue args
     "peek" -> return $ FunCall Peek args
-    "isEmpty" -> return $ FunCall IsEmptyQueue args
+    "isEmptyQueue" -> return $ FunCall IsEmptyQueue args
     
     -- Operaciones de UnionFind
     "union" -> return $ FunCall Union args

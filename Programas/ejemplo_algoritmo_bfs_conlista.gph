@@ -16,7 +16,7 @@ Q := emptyQueue;
 Q := enqueue(Q, "1");
 NodosVisitados := add(NodosVisitados, "1");
 
-while !(isEmpty(Q)) do
+while !(isEmptyQueue(Q)) do
     node := peek(Q);
     Q := dequeue(Q);
     
@@ -30,4 +30,4 @@ while !(isEmpty(Q)) do
     end
 end;
 
-//print(NodosVisitados) 
+print(NodosVisitados) 
