@@ -46,7 +46,7 @@
       "patterns": [
         {
           "name": "keyword.control.graphsdsl",
-          "match": "\\b(cond|then|else|end|while|do|for|in|skip|print)\\b"
+          "match": "\\b(cond|then|else|end|while|do|for|in|skip|print|visualize)\\b"
         },
         {
           "name": "keyword.other.graphsdsl",
@@ -89,7 +89,7 @@
         },
         {
           "name": "keyword.operator.comparison.graphsdsl",
-          "match": "(==|<|>|=node)"
+          "match": "(==|<|>)"
         },
         {
           "name": "keyword.operator.logical.graphsdsl",
@@ -113,7 +113,7 @@
       "patterns": [
         {
           "name": "entity.name.function.graph.graphsdsl",
-          "match": "\\b(addNode|deleteNode|addEdge|deleteEdge|complement|graphUnion|intersection|getEdges|adjacentNodes)\\b"
+          "match": "\\b(addNode|deleteNode|addEdge|deleteEdge|complement|graphUnion|intersection|getEdges|adjacentNodes|adjacentEdges|graphComplement|esCiclico|esConexo)\\b"
         },
         {
           "name": "entity.name.function.edge.graphsdsl",
@@ -121,19 +121,15 @@
         },
         {
           "name": "entity.name.function.list.graphsdsl",
-          "match": "\\b(len|head|tail|add|sortByWeight|headEdge|tailEdges|inList|isEmptyList)\\b"
+          "match": "\\b(len|head|tail|addList|sortByWeight|inList|isEmptyList)\\b"
         },
         {
           "name": "entity.name.function.queue.graphsdsl",
-          "match": "\\b(queueLen|enqueue|dequeue|dequeueNode|isEmpty)\\b"
+          "match": "\\b(queueLen|enqueue|dequeue|peek|isEmptyQueue)\\b"
         },
         {
           "name": "entity.name.function.unionfind.graphsdsl",
           "match": "\\b(union|find)\\b"
-        },
-        {
-          "name": "entity.name.function.predicate.graphsdsl",
-          "match": "\\b(esCiclico|esConexo)\\b"
         }
       ]
     },

@@ -1,0 +1,11 @@
+g := graph [
+    ("1", [("2", 22)] ),
+    ("2", [("1", 22), ("5", 33)] ),
+    ("3", [("4", 11)] ),
+    ("4", [("3", 11)] ),
+    ("5", [("2", 33)] )
+];
+
+aVersiesConexo := esConexo(g);
+print(aVersiesConexo);
+visualize(g, "SolamenteUnGrafoInconexo")

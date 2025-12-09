@@ -2,5 +2,7 @@
 x := 5.2;
 y := x + 3;
 y := y + 2;
+print "Valor variable y:";
 print y;
-text := "This is a string"
+text := "This is a string";
+print text

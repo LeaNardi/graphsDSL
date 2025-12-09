@@ -5,6 +5,7 @@ type Variable = String
 type Env = [(Variable, Value)] -- Podria moverse a Eval/StateErrorTick.hs
 type Weight = Float
 type Ticks = Integer -- Podria moverse a Eval/StateErrorTick.hs
+type Output = [String]
 
 -- Runtime Values -- No se usa en Parser, se usa en Eval
 data Value = IntValue Integer
@@ -33,7 +34,6 @@ data Expr =
   | FloatLit Float
   | BoolLit Bool
   | StringLit String
-  | NodeLit String
   | EmptyList
   | EmptyQueue
   
@@ -70,7 +70,7 @@ data BinOpType = Plus | Minus | Times | Div | Mod
  deriving (Show, Eq)
 
 -- Operaciones de comparacion
-data CompOpType = Eq | Lt | Gt | And | Or | EqNode
+data CompOpType = Eq | Lt | Gt | And | Or
  deriving (Show, Eq)
 
 -- Funciones
@@ -78,18 +78,19 @@ data FunctionType =
   -- Operaciones de Graph
     AddNode | DeleteNode | AddEdge | DeleteEdge
   | GraphComplement | GraphUnion | GraphIntersection
-  | GetEdges | AdjacentNodes | EsCiclico | EsConexo
+  | GetEdges | AdjacentNodes | AdjacentEdges
+  | EsCiclico | EsConexo
   
   -- Operaciones de Edge
   | GetWeight | GetNode1 | GetNode2
   
   -- Operaciones de List
   | Len | TailList | AddList | HeadList
-  | SortByWeight | TailEdges | HeadEdge
+  | SortByWeight
   | InList | IsEmptyList
   
   -- Operaciones de Queue
-  | QueueLen | Enqueue | Dequeue | DequeueNode
+  | QueueLen | Enqueue | Dequeue | Peek
   | IsEmptyQueue
   
   -- Operaciones de UnionFind
@@ -104,5 +105,6 @@ data Comm = Skip
           | Cond Expr Comm Comm
           | While Expr Comm
           | For Variable Expr Comm
+          | Visualize Expr Expr -- Visualize grafo nombreArchivo
           | Print Expr
  deriving (Show, Eq)

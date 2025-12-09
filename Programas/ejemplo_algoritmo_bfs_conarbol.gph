@@ -1,0 +1,41 @@
+// Otro BFS pero intentando ver el BFS en formato tree. Por ahora no guarda peso de aristas
+
+g := graph [
+    ("1", [("2", 22), ("3", 55)] ),
+    ("2", [("1", 22), ("3", 44.5), ("5", 33)] ),
+    ("3", [("1", 55), ("2", 44.5), ("4", 11)] ),
+    ("4", [("3", 11), ("5", 44)] ),
+    ("5", [("2", 33), ("4", 44)] )
+];
+
+visualize(g, "OtroBFS_original");
+
+NodosVisitados := emptyList;
+Q := emptyQueue;
+bfsTree := graph [];
+
+Q := enqueue(Q, "1");
+NodosVisitados := add(NodosVisitados, "1");
+bfsTree := addNode(bfsTree, "1");
+
+while !(isEmptyQueue(Q)) do
+    node := peek(Q);
+    Q := dequeue(Q);
+    
+    for neighbor in adjacentEdges(g, node) do
+        cond !(inList(getNode2(neighbor), NodosVisitados)) then
+            Q := enqueue(Q, getNode2(neighbor));
+            NodosVisitados := add(NodosVisitados, getNode2(neighbor));
+            
+            // Aca se arma el BFSTree
+            bfsTree := addNode(bfsTree, getNode2(neighbor));
+            bfsTree := addEdge(bfsTree, node, getNode2(neighbor), getWeight(neighbor))
+        else
+            skip
+        end
+    end
+end;
+
+print(NodosVisitados); // fruta que no anda
+
+visualize(bfsTree, "OtroBFS_tree")

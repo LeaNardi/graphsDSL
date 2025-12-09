@@ -1,0 +1,261 @@
+// DEMO: 1, 2, 3 probando todas las funciones de GraphDSL
+
+// 1: Tipos basicos y Literals
+
+// Integer y Float
+intVar := 42;
+floatVar := 3.14;
+
+// Booleanos literales
+boolTrue := true;
+boolFalse := false;
+
+// String literal
+strVar := "Hello GraphsDSL";
+
+// Colecciones vacías
+emptyL := emptyList;
+emptyQ := emptyQueue;
+
+// 2: Operaciones aritméticas 
+sum := 10 + 5;
+diff := 10 - 3;
+prod := 4 * 7;
+quot := 20 / 4;
+remainder := 17 % 5;
+negative := -10;
+
+print sum;
+print diff;
+print prod;
+print quot;
+print remainder;
+print negative;
+
+
+// 3: Operaciones de comparación 
+isEqual := 5 == 5;
+isLess := 3 < 10;
+isGreater := 15 > 8;
+
+print isEqual;
+print isLess;
+print isGreater;
+
+
+// 4: Operaciones Lógicas
+andResult := true && true;
+orResult := false || true;
+notResult := !false;
+
+print andResult;
+print orResult;
+print notResult;
+
+
+// 5: Expresión Condicional 
+x := 10;
+ternary := x > 5 ? "mas grande" : "mas chico";
+print ternary;
+
+// 6: Control de Flujo
+
+// Conditional statement
+cond x > 5 then
+    print "x es mas grande que 5"
+else
+    print "x es 5 o menos"
+end;
+
+// Loop While
+counter := 3;
+while counter > 0 do
+    print counter;
+    counter := counter - 1
+end;
+
+// Sentencia Skip (no-op)
+skip;
+
+// 7: Construcción de Grafos y Operaciones Básicas
+
+// Crear un grafo con nodos y aristas ponderadas
+g := graph [
+    ("A", [("B", 5), ("C", 3)]),
+    ("B", [("A", 5), ("C", 2), ("D", 4)]),
+    ("C", [("A", 3), ("B", 2), ("D", 6)]),
+    ("D", [("B", 4), ("C", 6)])
+];
+
+// addNode: Agregar un nuevo nodo al grafo
+g1 := addNode(g, "E");
+
+// deleteNode: Eliminar un nodo del grafo
+g2 := deleteNode(g1, "E");
+
+// addEdge: Agregar una arista ponderada entre nodos
+g3 := addEdge(g, edge("A", "D", 10));
+
+// deleteEdge: Eliminar una arista entre nodos
+g4 := deleteEdge(g3, edge("A", "D", 10));
+
+// 8: Funciones de Análisis de Grafos
+
+// adjacentNodes: Obtener vecinos de un nodo
+neighbors := adjacentNodes(g, "A");
+print neighbors;
+
+// getEdges: Obtener todas las aristas de un grafo
+allEdges := getEdges(g);
+print allEdges;
+
+// esCiclico: Verificar si el grafo tiene ciclos
+hasCycle := esCiclico(g);
+print hasCycle;
+
+// esConexo: Verificar si el grafo está conectado
+isConnected := esConexo(g);
+print isConnected;
+
+// 9: Operaciones de Conjuntos de Grafos
+
+h := graph [
+    ("A", [("B", 1)]),
+    ("B", [("A", 1), ("E", 2)]),
+    ("E", [("B", 2)])
+];
+
+// complement: Obtener complemento de un grafo
+compG := complement(g);
+
+// graphUnion: Unión de dos grafos
+unionG := graphUnion(g, h);
+
+// intersection: Intersección de dos grafos
+interG := intersection(g, h);
+
+// 10: Constructor de Aristas y Operaciones
+
+// Crear una arista
+myEdge := edge("X", "Y", 7.5);
+
+// getNode1: Obtener primer nodo de la arista
+node1 := getNode1(myEdge);
+print node1;
+
+// getNode2: Obtener segundo nodo de la arista
+node2 := getNode2(myEdge);
+print node2;
+
+// getWeight: Obtener peso de la arista
+weight := getWeight(myEdge);
+print weight;
+
+// 11: Operaciones con Listas
+
+// CConstructor de lista
+myList := ["manzana", "banana", "pera"];
+
+// len: Obtener longitud de la lista
+listLen := len(myList);
+print listLen;
+
+// head: Obtener primer elemento
+firstElem := head(myList);
+print firstElem;
+
+// tail: Obtener lista sin el primer elemento
+restList := tail(myList);
+print restList;
+
+// add: Agregar elemento a la lista
+extList := add(myList, "frutilla");
+print extList;
+
+// inList: Verificar si un elemento está en la lista
+found := inList("banana", myList);
+print found;
+
+// isEmptyList: Verificar si la lista está vacía
+isEmpty1 := isEmptyList(myList);
+print isEmpty1;
+
+isEmpty2 := isEmptyList(emptyList);
+print isEmpty2;
+
+// 12: Operaciones con Listas de Aristas
+
+edgeList := getEdges(g);
+
+// sortByWeight: Ordenar aristas por peso
+sortedEdges := sortByWeight(edgeList);
+print sortedEdges;
+
+// 13: Operaciones con Colas
+
+// Constructor de colas
+myQueue := queue ["first", "second", "third"];
+
+// queueLen: Obtener longitud de la cola
+qLen := queueLen(myQueue);
+print qLen;
+
+// enqueue: Agregar elemento a la cola
+myQueue := enqueue(myQueue, "fourth");
+
+// peek: Obtener primer elemento
+frontElem := peek(myQueue);
+print frontElem;
+
+// dequeue: Eliminar primer elemento
+myQueue := dequeue(myQueue);
+
+// isEmpty: Verificar si la cola está vacía
+qIsEmpty := isEmptyQueue(myQueue);
+print qIsEmpty;
+
+// 14: Operaciones UnionFind
+
+// Constructor UnionFind - cada elemento inicialmente es u propio padre
+uf := unionfind [
+    ("A", "A"),
+    ("B", "B"),
+    ("C", "C"),
+    ("D", "D")
+];
+
+// find: Encontrar representante de un elemento
+repA := find("A", uf);
+print repA;
+
+// union: Unir dos conjuntos
+uf := union("A", "B", uf);
+uf := union("C", "D", uf);
+
+// Después de la unión, A y B deberían tener el mismo representante
+repA2 := find("A", uf);
+repB2 := find("B", uf);
+print repA2;
+print repB2;
+
+// 15: For Loop with Collections
+
+// Loop For iterando sobre nodos adyacentes
+print "Iterando sobre vecinos de B:";
+for neighbor in adjacentNodes(g, "B") do
+    print neighbor
+end;
+
+// Loop For con loop con lista
+numList := [1, 2, 3, 4, 5];
+total := 0;
+for num in numList do
+    total := total + num
+end;
+print total;
+
+// 16: Visualization
+// visualize: Exportar grafo a formato Graphviz
+visualize(g, "demo_original");
+visualize(compG, "demo_complement");
+visualize(unionG, "demo_union")

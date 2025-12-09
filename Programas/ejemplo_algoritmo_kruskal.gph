@@ -33,4 +33,7 @@ while len(pending) > 0 do
   else
     skip
   end
-end
+end;
+
+visualize(g, "Programas/Original");
+visualize(mst, "Programas/MST_Kruskal")

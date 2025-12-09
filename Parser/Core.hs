@@ -23,6 +23,7 @@ parseSimpleComm = try parseSkip
                <|> try parseFor
                <|> try parsePrint
                <|> try parseAssignment
+               <|> try parseVisualize
 
 -- =====================================
 -- Parser de expresiones generales
@@ -55,7 +56,6 @@ parseComparison = try (do
   op <- (reservedOp gdsl "==" $> Comparison Eq)
     <|> (reservedOp gdsl "<" $> Comparison Lt)
     <|> (reservedOp gdsl ">" $> Comparison Gt)
-    <|> (reservedOp gdsl "=node" $> Comparison EqNode)
   right <- parseArithmetic
   return $ op left right)
                         <|> parseArithmetic
@@ -140,6 +140,7 @@ parseFunction = do
     "intersection" -> return $ FunCall GraphIntersection args
     "getEdges" -> return $ FunCall GetEdges args
     "adjacentNodes" -> return $ FunCall AdjacentNodes args
+    "adjacentEdges" -> return $ FunCall AdjacentEdges args
     
     -- Operaciones sobre aristas
     "getWeight" -> return $ FunCall GetWeight args
@@ -152,15 +153,13 @@ parseFunction = do
     "tail" -> return $ FunCall TailList args
     "add" -> return $ FunCall AddList args
     "sortByWeight" -> return $ FunCall SortByWeight args
-    "headEdge" -> return $ FunCall HeadEdge args
-    "tailEdges" -> return $ FunCall TailEdges args
     
     -- Operaciones de Queue
     "queueLen" -> return $ FunCall QueueLen args
     "enqueue" -> return $ FunCall Enqueue args
     "dequeue" -> return $ FunCall Dequeue args
-    "dequeueNode" -> return $ FunCall DequeueNode args
-    "isEmpty" -> return $ FunCall IsEmptyQueue args
+    "peek" -> return $ FunCall Peek args
+    "isEmptyQueue" -> return $ FunCall IsEmptyQueue args
     
     -- Operaciones de UnionFind
     "union" -> return $ FunCall Union args
@@ -275,3 +274,11 @@ parseAssignment = do
   reservedOp gdsl ":="
   expr <- parseExpr
   return $ AssignValue var expr
+
+parseVisualize :: Parser Comm
+parseVisualize = do
+  reserved gdsl "visualize" 
+  args <- parens gdsl $ sepBy parseExpr (comma gdsl) --2 argumentos
+  case args of
+    [graphExpr, fileNameExpr] -> return $ Visualize graphExpr fileNameExpr
+    _ -> fail "visualize espera 2 argumentos: visualize(grafo, \"nombre.png\"" --Este error lo manejamos desde aca o desde otro lado?
