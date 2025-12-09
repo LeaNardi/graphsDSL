@@ -1,7 +1,7 @@
 module Eval.Core ( evalComm, evalExpr ) where
 
 import ASTGraphs ( Comm(..), Expr(..), BinOpType(..), CompOpType(..), FunctionType(..), Value(..), Graph(..), Node, Edge(..), Queue(..), UnionFind(..), Weight )
-import Eval.MonadClasses ( MonadError(..), MonadState(lookfor, update), MonadTick(..) )
+import Eval.MonadClasses ( MonadError(..), MonadState(lookfor, update), MonadTick(..), MonadOutput(..) )
 import Control.Monad ( when )
 import Data.List (intersect, intercalate)
 import System.IO.Unsafe (unsafePerformIO)
@@ -9,7 +9,7 @@ import System.Process (callCommand)
 import Visualization.GraphvizExporter (writeGraphToDotFile)
 import System.Directory (createDirectory, createDirectoryIfMissing)
 
-evalComm :: (MonadState m, MonadError m, MonadTick m) => Comm -> m ()
+evalComm :: (MonadState m, MonadError m, MonadTick m, MonadOutput m) => Comm -> m ()
 evalComm Skip = return ()
 evalComm (AssignValue v expr) = do val <- evalExpr expr
                                    update v val
@@ -50,7 +50,7 @@ evalComm (Visualize graphExpr fileExpr) = do
     _ -> throw "Visualize necesita un grafo como primer argumento"
 evalComm (Print expr) = do 
   val <- evalExpr expr
-  let !_ = unsafePerformIO $ putStrLn (formatValue val)
+  appendOutput (formatValue val)
   return ()
   where 
     formatValue (IntValue i)    = show i

@@ -17,10 +17,15 @@ main = do args <- getArgs
 
                                 -- Para mostrar AST y resultado de Eval:
                                 Right ast -> do
-                                    putStrLn "AST parseado:"
-                                    putStrLn (formatAST ast)
-                                    putStrLn "\nResultado de la evaluación:"
-                                    putStrLn (formatEval (eval ast))
+                                    -- putStrLn "AST parseado:"
+                                    -- putStrLn (formatAST ast)
+                                    case eval ast of
+                                        Left err -> putStrLn "Error de evaluación:" >> putStrLn err
+                                        Right (env, ticks, output) -> do
+                                            -- putStrLn "\nResultado de la evaluación:"
+                                            putStrLn (formatEval (Right (env, ticks, output)))
+                                            -- Output
+                                            print output
 
                                 -- Para procesar sin mostrar AST y resutado Eval
                                 -- Right ast -> case eval ast of

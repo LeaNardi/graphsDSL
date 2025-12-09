@@ -5,6 +5,7 @@ type Variable = String
 type Env = [(Variable, Value)] -- Podria moverse a Eval/StateErrorTick.hs
 type Weight = Float
 type Ticks = Integer -- Podria moverse a Eval/StateErrorTick.hs
+type Output = [String]
 
 -- Runtime Values -- No se usa en Parser, se usa en Eval
 data Value = IntValue Integer
