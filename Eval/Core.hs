@@ -552,16 +552,17 @@ evalExpr (FunCall Find [nodeExpr, ufExpr]) = do
       node <- case nodeVal of
                 StringValue s -> return s
                 _ -> throw "Find requiere que node sea de tipo String"
-      let root = findRoot node pairs
-      return (StringValue root)
+      case findRoot node pairs of
+        Just root -> return (StringValue root)
+        Nothing -> throw ("El Nodo '" ++ node ++ "' no se encontró en UnionFind")
     _ -> throw "Find requiere un tipo UnionFind"
   where
-    findRoot :: Node -> [(Node, Node)] -> Node
+    findRoot :: Node -> [(Node, Node)] -> Maybe Node
     findRoot node pairs =
       case lookup node pairs of
-        Just parent | parent == node -> node
+        Just parent | parent == node -> Just node
         Just parent -> findRoot parent pairs
-        Nothing -> error $ "El Nodo '" ++ node ++ "' no se encontró en UnionFind" 
+        Nothing -> Nothing
 evalExpr (FunCall Union [node1Expr, node2Expr, ufExpr]) = do
   node1Val <- evalExpr node1Expr
   node2Val <- evalExpr node2Expr
@@ -574,8 +575,12 @@ evalExpr (FunCall Union [node1Expr, node2Expr, ufExpr]) = do
       node2 <- case node2Val of
                  StringValue s -> return s
                  _ -> throw "Union requiere que node2 sea de tipo String"
-      let root1 = findRoot node1 pairs
-      let root2 = findRoot node2 pairs
+      root1 <- case findRoot node1 pairs of
+        Just root -> return root
+        Nothing -> throw ("El Nodo '" ++ node1 ++ "' no se encontró en UnionFind")
+      root2 <- case findRoot node2 pairs of
+        Just root -> return root
+        Nothing -> throw ("El Nodo '" ++ node2 ++ "' no se encontró en UnionFind")
       if root1 == root2
         -- mismo conjunto
         then return (UnionFindValue (UnionFind pairs))
@@ -585,12 +590,12 @@ evalExpr (FunCall Union [node1Expr, node2Expr, ufExpr]) = do
           return (UnionFindValue (UnionFind newPairs))
     _ -> throw "Union requiere un tipo UnionFind"
   where
-    findRoot :: Node -> [(Node, Node)] -> Node
+    findRoot :: Node -> [(Node, Node)] -> Maybe Node
     findRoot node pairs =
       case lookup node pairs of
-        Just parent | parent == node -> node
+        Just parent | parent == node -> Just node
         Just parent -> findRoot parent pairs
-        Nothing -> error $ "El Nodo '" ++ node ++ "' no se encontró en UnionFind"
+        Nothing -> Nothing
 
 evalExpr (FunCall MetricClosure [graphExpr]) = do
   graphVal <- evalExpr graphExpr
@@ -599,5 +604,5 @@ evalExpr (FunCall MetricClosure [graphExpr]) = do
       return (GraphValue (metricClosure g))
     _ -> throw "MetricClosure requiere un tipo Graph"
 
--- Las no implementadas tiran error
-evalExpr (FunCall _ _) = throw "La funcion no fue implementada o los argumentos son invalidos"
+-- Las no implementadas tiran error, aunque si el parser esta bien hecho, evita que lleguemos a este punto
+evalExpr (FunCall f args) = throw ("La funcion " ++ show f ++ "(" ++ show args ++ ")" ++ " no fue implementada o los argumentos son invalidos")
