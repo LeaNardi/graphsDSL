@@ -62,7 +62,7 @@ g3 := addEdge(g2, edge("D", "A", 1.0));
 edges := getEdges(g3);
 neighbors := adjacentNodes(g, "A");
 g4 := graphUnion(g, g2);
-g5 := intersection(g, g2);
+g5 := graphIntersection(g, g2);
 
 // Edge operations
 weight := getWeight(e);
@@ -70,10 +70,10 @@ node1 := getNode1(e);
 node2 := getNode2(e);
 
 // List operations
-length := len(myList);
-firstItem := head(myList);
-restItems := tail(myList);
-newList := add(myList, 6);
+length := lenList(myList);
+firstItem := headList(myList);
+restItems := tailList(myList);
+newList := appendList(myList, 6);
 sortedEdges := sortByWeight(edgeList);
 firstEdge := headEdge(edgeList);
 restEdges := tailEdges(edgeList);
@@ -84,8 +84,8 @@ empty := isEmptyList([]);
 qLen := queueLen(myQueue);
 q2 := enqueue(myQueue, "fourth");
 dequeuedValue := dequeue(myQueue);
-dequeuedNode := dequeueNode(myQueue);
-qEmpty := isEmpty(myQueue);
+dequeuedNode := peek(myQueue);
+qEmpty := isEmptyQueue(myQueue);
 
 // UnionFind operations (for MST algorithms)
 root := find(uf, "A");

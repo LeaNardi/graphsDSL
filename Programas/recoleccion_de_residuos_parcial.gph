@@ -1,0 +1,245 @@
+// Problema TSP (Traveling Salesman Problem) aplicado a recoleccion de residuos
+
+// Basado en:
+// https://www.geeksforgeeks.org/dsa/approximate-solution-for-travelling-salesman-problem-using-mst/
+
+// GRAFO URBANO (Cuadricula 4x4 con pesos)
+g := graph[
+  ("A1", [("A2",99),("B1",1)]),
+  ("A2", [("A1",99),("A3",1),("B2",1)]),
+  ("A3", [("A2",1),("B3",1)]),
+
+  ("B1", [("A1",1),("B2",1)]),
+  ("B2", [("B1",1),("A2",1),("B3",1)]),
+  ("B3", [("B2",1),("A3",1)])
+];
+
+// Nodo en el que comienza el recorrido
+startNode := "A1";
+
+// OPCIONAL: Simular cortes de calle
+// g2 := deleteEdge(g, edge("B2", "C2"));
+// g2 := deleteEdge(g2, edge("C3", "D3"));
+
+// Si no hay cortes, g2 = g
+g2 := g;
+
+print "01 - Grafo urbano inicial:";
+print g2;
+visualize(g2, "01_GrafoUrbanoParcial");
+
+
+// ===============================================
+// 1) VERIFICAR CONECTIVIDAD GLOBAL
+// Si no es conexo, se cancela el TSP inmediatamente
+
+cond esConexo(g2) then
+    skip
+else
+    print "ERROR: Hay barrios inaccesibles. No se puede planificar la ruta."
+end;
+
+
+// 2) CLAUSURA MeTRICA
+// Convertimos g2 en un grafo completo con distancias minimas
+
+gMetric := metricClosure(g2);
+
+print "02 - Grafo clausura metrica:";
+print gMetric;
+visualize(gMetric, "02_GrafoMetricParcial");
+
+gMetricPaths := metricClosurePaths(g2);
+print("Paths de la clausura metrica:");
+print(gMetricPaths);
+
+
+// 3) TSP Aproximado usando MST (Minimum Spanning Tree) + DFS (Depth First Search)
+
+
+// 3.1. Obtener aristas ordenadas
+edges := sortByWeight(getEdges(gMetric));
+
+
+// 3.2. Inicializar Union-Find
+uf := unionfind[
+ ("A1","A1"),("A2","A2"),("A3","A3"),
+ ("B1","B1"),("B2","B2"),("B3","B3")
+];
+
+
+// 3.3 Construir MST con Kruskal
+mst := graph [];
+
+for e in edges do
+    n1 := getNode1(e);
+    n2 := getNode2(e);
+    r1 := find(n1, uf);
+    r2 := find(n2, uf);
+
+    cond (r1 == r2) then
+        skip
+    else
+        uf := union(r1, r2, uf);
+        mst := addEdge(mst, e)
+    end
+end;
+
+print "03 - MST construido:";
+print mst;
+visualize(mst, "03_MST");
+
+
+// 4) RECORRIDO FINAL (DFS sobre MST = TSP Aproximado)
+
+// Inicializar estructuras
+preorderResult := emptyList;
+visited := emptyList;
+
+// Pila para Preorder
+stack := emptyList;
+stack := appendList(stack, startNode);
+
+while !isEmptyList(stack) do
+    current := lastList(stack);
+    stack := initList(stack);
+    
+    cond inList(current, visited) then
+        skip
+    else
+        visited := appendList(visited, current);
+        
+        // Visitar nodo
+        preorderResult := appendList(preorderResult, current);
+        
+        // Obtener vecinos
+        neighbors := adjacentNodes(mst, current);
+        // Se invierten para asegurar el comportamiento como pila
+        neighborsReversed := reverseList(neighbors);
+
+        for neighbor in neighborsReversed do
+            cond inList(neighbor, visited) then
+                skip
+            else
+                stack := appendList(stack, neighbor)
+            end
+        end
+    end
+end;
+
+print "DFS sobre MST:";
+print preorderResult;
+
+
+visited2 := appendList(preorderResult, startNode);
+print "Recorrido TSP aproximado:";
+print visited2;
+
+// 5) Calculo del costo total del recorrido TSP
+// usando unicamente la clausura metrica
+
+print "==== CALCULO DEL COSTO DEL RECORRIDO ====";
+
+// Inicializar costo
+total := 0;
+
+// Obtener todas las aristas del grafo metrico
+edgesMetric := getEdges(gMetric);
+
+// Si por algun motivo no hay recorrido, no hacemos nada
+cond isEmptyList(visited2) then
+    print "No hay recorrido."
+else
+    // Tomamos el primer nodo y el resto
+    prev := headList(visited2);
+    rest := tailList(visited2);
+
+    while !isEmptyList(rest) do
+        next := headList(rest);
+
+        // Buscamos la distancia minima entre prev y next
+        w := 0;
+        foundEdge := 0;
+
+        for e in edgesMetric do
+            cond (foundEdge == 0) then
+                u := getNode1(e);
+                v := getNode2(e);
+
+                // Comparacion metrica: edge(u,v)
+                cond ((u == prev) && (v == next)) then
+                    w := getWeight(e);
+                    foundEdge := 1
+                else
+                    cond ((u == next) && (v == prev)) then
+                        w := getWeight(e);
+                        foundEdge := 1
+                    else
+                        skip
+                    end
+                end
+            else
+                skip
+            end
+        end;
+
+        total := total + w;
+
+        prev := next;
+        rest := tailList(rest)
+    end
+
+end;
+
+print "Costo total del recorrido:";
+print total;
+
+// 6) RECONSTRUCCIoN DEL CAMINO FISICO REAL EN g2
+
+print "Reconstruccion del camino real:";
+
+// Lista con el primer nodo
+caminoReal := [startNode];
+
+// Obtener el camino hamiltoniano
+cond isEmptyList(visited2) then
+    print "No hay recorrido."
+else
+    prev := headList(visited2);
+    rest := tailList(visited2);
+    
+    while !isEmptyList(rest) do
+        next := headList(rest);
+
+        segmentoInvertido := emptyList;
+        foundPath := 0;
+        
+        for pathInfo in gMetricPaths do
+            cond (foundPath == 0) then
+                source := headList(pathInfo);
+                target := headList(tailList(pathInfo));
+                path := lastList(pathInfo);
+                
+                cond ((source == prev) && (target == next)) then
+                    segmentoInvertido := path;
+                    foundPath := 1
+                else
+                    skip
+                end
+            else
+                skip
+            end
+        end;
+
+        segmentoSinPrimero := tailList(segmentoInvertido);
+        for s in segmentoSinPrimero do
+            caminoReal := appendList(caminoReal, s)
+        end;
+
+        prev := next;
+        rest := tailList(rest)
+    end
+end;
+
+print "Camino fisico real concatenado:";
+print caminoReal

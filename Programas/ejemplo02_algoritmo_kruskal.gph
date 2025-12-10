@@ -17,9 +17,12 @@ edges := sortByWeight(getEdges(g));
 mst := graph [];
 pending := edges;
 
-while len(pending) > 0 do
-  edge_elem := head(pending);
-  pending := tail(pending);
+while lenList(pending) > 0 do
+  edge_elem := headList(pending);
+  pending := tailList(pending);
+while lenList(pending) > 0 do
+  edge_elem := headList(pending);
+  pending := tailList(pending);
 
   u := getNode1(edge_elem);
   v := getNode2(edge_elem);
@@ -28,12 +31,15 @@ while len(pending) > 0 do
   rep_v := find(v, uf);
 
   cond !(rep_u == rep_v) then
-    mst := addEdge(mst, u, v, w) ;
+    mst := addEdge(mst, edge(u, v, w)) ;
     uf := union(u, v, uf)
   else
     skip
   end
+  end
 end;
 
-visualize(g, "Programas/Original");
-visualize(mst, "Programas/MST_Kruskal")
+print(g);
+visualize(g, "Original");
+print(mst);
+visualize(mst, "MST_Kruskal")

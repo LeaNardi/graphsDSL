@@ -1,0 +1,64 @@
+g := graph [
+  ("A", [("B", 7.5), ("D", 1)]),
+  ("B", [("A", 7.5), ("C", 13), ("D", 10), ("E", 7), ("H", 13.5)]),
+  ("C", [("B", 13), ("E", 11), ("G", 5)]),
+  ("D", [("A", 1), ("B", 10), ("E", 15), ("F", 4.01)]),
+  ("E", [("B", 7), ("C", 11), ("D", 15), ("F", 10.8), ("G", 2)]),
+  ("F", [("D", 4.01), ("E", 10.8), ("G", 11)]),
+  ("G", [("C", 5), ("E", 2), ("F", 11)]),
+  ("H", [("B", 13.5)])
+];
+
+visualize(g, "prim_original");
+
+mst := graph [];  
+nodosVisitados := emptyList; 
+candidatos := emptyList; 
+
+inicio := "A";
+nodosVisitados := appendList(nodosVisitados, inicio);
+mst := addNode(mst, inicio);
+
+for e in adjacentEdges(g, inicio) do
+  candidatos := appendList(candidatos, e)
+end;
+
+// Este es el ciclo principal, mietras haya candidatos...
+while lenList(candidatos) > 0 do
+
+// Ordeno las aristas candidatas por peso, tomo la de menor peso y la elimino de la lista
+  candidatos := sortByWeight(candidatos);
+  minEdge := headList(candidatos);
+  candidatos := tailList(candidatos);
+  
+  nodoSiguiente := getNode2(minEdge);
+  nodoOrigen := getNode1(minEdge);
+  pesoArista := getWeight(minEdge);
+  
+// Si el nodo destino no esta en visitados, lo agrego al MST y lo marco como visitado
+  cond !(inList(nodoSiguiente, nodosVisitados)) then
+    mst := addNode(mst, nodoSiguiente);
+    mst := addEdge(mst, edge(nodoOrigen, nodoSiguiente, pesoArista));
+    
+    nodosVisitados := appendList(nodosVisitados, nodoSiguiente);
+    
+// Ciclo para agregar las nuevas candidatas desde el nuevo nodo visitado
+    for e in adjacentEdges(g, nodoSiguiente) do
+      cond !(inList(getNode2(e), nodosVisitados)) then
+        candidatos := appendList(candidatos, e)
+      else
+        skip
+      end
+    end
+  else
+    skip
+  end
+end;
+
+print "nodosVisitados en orden:";
+print nodosVisitados;
+
+print "Aristas de MST:";
+print getEdges(mst);
+
+visualize(mst, "prim_MST")

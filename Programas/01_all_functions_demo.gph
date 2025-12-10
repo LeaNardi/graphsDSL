@@ -105,6 +105,10 @@ g4 := deleteEdge(g3, edge("A", "D", 10));
 neighbors := adjacentNodes(g, "A");
 print neighbors;
 
+// adjacentEdges: Obtener aristas adyacentes a un nodo (con sus pesos)
+adjEdges := adjacentEdges(g, "A");
+print adjEdges;
+
 // getEdges: Obtener todas las aristas de un grafo
 allEdges := getEdges(g);
 print allEdges;
@@ -125,14 +129,26 @@ h := graph [
     ("E", [("B", 2)])
 ];
 
+i := graph [
+    ("A", [("B", 1), ("D", 4)]),
+    ("B", [("A", 1), ("C", 2)]),
+    ("C", [("B", 2), ("D", 3)]),
+    ("D", [("C", 3), ("A", 4)])
+];
+
 // complement: Obtener complemento de un grafo
-compG := complement(g);
+compG := graphComplement(g);
 
 // graphUnion: Unión de dos grafos
 unionG := graphUnion(g, h);
 
 // intersection: Intersección de dos grafos
-interG := intersection(g, h);
+interG := graphIntersection(g, h);
+
+// metricClosure: Cierre métrico del grafo (caminos más cortos entre todos los pares)
+visualize(i, "demo_metric_closure_input");
+closureG := metricClosure(i);
+visualize(closureG, "demo_metric_closure_output");
 
 // 10: Constructor de Aristas y Operaciones
 
@@ -157,20 +173,34 @@ print weight;
 myList := ["manzana", "banana", "pera"];
 
 // len: Obtener longitud de la lista
-listLen := len(myList);
+listLen := lenList(myList);
 print listLen;
 
 // head: Obtener primer elemento
-firstElem := head(myList);
+firstElem := headList(myList);
 print firstElem;
 
 // tail: Obtener lista sin el primer elemento
-restList := tail(myList);
+restList := tailList(myList);
 print restList;
 
+// last: Obtener último elemento de la lista
+lastElem := lastList(myList);
+print lastElem;
+
 // add: Agregar elemento a la lista
-extList := add(myList, "frutilla");
+extList := appendList(myList, "frutilla");
 print extList;
+
+// cons: Agregar elemento al inicio de la lista
+consList := consList(myList, "naranja");
+print consList;
+
+// concat: Concatenar dos listas
+list1 := ["a", "b"];
+list2 := ["c", "d"];
+concatList := concatList(list1, list2);
+print concatList;
 
 // inList: Verificar si un elemento está en la lista
 found := inList("banana", myList);

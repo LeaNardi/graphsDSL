@@ -113,7 +113,7 @@
       "patterns": [
         {
           "name": "entity.name.function.graph.graphsdsl",
-          "match": "\\b(addNode|deleteNode|addEdge|deleteEdge|complement|graphUnion|intersection|getEdges|adjacentNodes|adjacentEdges|graphComplement|esCiclico|esConexo)\\b"
+          "match": "\\b(addNode|deleteNode|addEdge|deleteEdge|graphComplement|graphUnion|graphIntersection|getEdges|adjacentNodes|adjacentEdges|esCiclico|esConexo|metricClosure|metricClosurePaths)\\b"
         },
         {
           "name": "entity.name.function.edge.graphsdsl",
@@ -121,7 +121,7 @@
         },
         {
           "name": "entity.name.function.list.graphsdsl",
-          "match": "\\b(len|head|tail|addList|sortByWeight|inList|isEmptyList)\\b"
+          "match": "\\b(lenList|headList|lastList|tailList|initList|reverseList|appendList|consList|concatList|sortByWeight|inList|isEmptyList)\\b"
         },
         {
           "name": "entity.name.function.queue.graphsdsl",

@@ -15,7 +15,7 @@ Q := emptyQueue;
 bfsTree := graph [];
 
 Q := enqueue(Q, "1");
-NodosVisitados := add(NodosVisitados, "1");
+NodosVisitados := appendList(NodosVisitados, "1");
 bfsTree := addNode(bfsTree, "1");
 
 while !(isEmptyQueue(Q)) do
@@ -25,17 +25,17 @@ while !(isEmptyQueue(Q)) do
     for neighbor in adjacentEdges(g, node) do
         cond !(inList(getNode2(neighbor), NodosVisitados)) then
             Q := enqueue(Q, getNode2(neighbor));
-            NodosVisitados := add(NodosVisitados, getNode2(neighbor));
+            NodosVisitados := appendList(NodosVisitados, getNode2(neighbor));
             
             // Aca se arma el BFSTree
             bfsTree := addNode(bfsTree, getNode2(neighbor));
-            bfsTree := addEdge(bfsTree, node, getNode2(neighbor), getWeight(neighbor))
+            bfsTree := addEdge(bfsTree, edge(node, getNode2(neighbor), getWeight(neighbor)))
         else
             skip
         end
     end
 end;
 
-print(NodosVisitados); // fruta que no anda
+print(NodosVisitados);
 
 visualize(bfsTree, "OtroBFS_tree")

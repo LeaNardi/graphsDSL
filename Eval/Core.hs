@@ -9,6 +9,8 @@ import System.Process (callCommand)
 import Visualization.GraphvizExporter (writeGraphToDotFile)
 import System.Directory (createDirectory, createDirectoryIfMissing)
 
+import Eval.MetricClosure ( metricClosure )
+
 evalComm :: (MonadState m, MonadError m, MonadTick m, MonadOutput m) => Comm -> m ()
 evalComm Skip = return ()
 evalComm (AssignValue v expr) = do val <- evalExpr expr
@@ -56,7 +58,7 @@ evalComm (Print expr) = do
     formatValue (BoolValue b)   = show b
     formatValue (StringValue s) = s
     formatValue (NodeValue n)   = n
-    formatValue (EdgeValue (Edge n1 n2 w)) = n1 ++ " --" ++ show w ++ "-> " ++ n2
+    formatValue (EdgeValue (Edge n1 n2 w)) = "(" ++ n1 ++ ", " ++ n2 ++ ", " ++ show w ++ ")"
     formatValue (GraphValue g)  = show g
     formatValue (ListValue vs)  = "[" ++ intercalate ", " (map formatValue vs) ++ "]"
     formatValue (QueueValue (Queue vs)) = "Queue: " ++ show (map formatValue vs)
@@ -445,12 +447,46 @@ evalExpr (FunCall EsConexo [graphExpr]) = do
       in bfsReachable adjList newQueue newVisited
 
 -- Operaciones de List
+evalExpr (FunCall LenList [listExpr]) = do
+  listVal <- evalExpr listExpr
+  case listVal of
+    ListValue xs -> return (IntValue (fromIntegral (length xs)))
+    _ -> throw "LenList requiere un tipo List"
+
+evalExpr (FunCall AppendList [listExpr, elemExpr]) = do
+  listVal <- evalExpr listExpr
+  elemVal <- evalExpr elemExpr
+  case listVal of
+    ListValue xs -> return (ListValue (xs ++ [elemVal]))
+    _ -> throw "AppendList requiere un tipo List"
+
+evalExpr (FunCall ConsList [listExpr, elemExpr]) = do
+  listVal <- evalExpr listExpr
+  elemVal <- evalExpr elemExpr
+  case listVal of
+    ListValue xs -> return (ListValue (elemVal:xs))
+    _ -> throw "ConsList requiere un tipo List"
+
+evalExpr (FunCall ConcatList [listExpr1, listExpr2]) = do
+  listVal1 <- evalExpr listExpr1
+  listVal2 <- evalExpr listExpr2
+  case (listVal1, listVal2) of
+    (ListValue xs, ListValue ys) -> return (ListValue (xs ++ ys))
+    _ -> throw "ConcatList requiere de tipos List"
+
 evalExpr (FunCall HeadList [listExpr]) = do
   listVal <- evalExpr listExpr
   case listVal of
     ListValue (x:_) -> return x
     ListValue [] -> throw "HeadList llamado en una lista vacía"
     _ -> throw "HeadList requiere un tipo List"
+
+evalExpr (FunCall LastList [listExpr]) = do
+  listVal <- evalExpr listExpr
+  case listVal of
+    ListValue [] -> throw "LastList llamado en una lista vacía"
+    ListValue (xs) -> return (last xs)
+    _ -> throw "LastList requiere un tipo List"
 
 evalExpr (FunCall TailList [listExpr]) = do
   listVal <- evalExpr listExpr
@@ -459,11 +495,18 @@ evalExpr (FunCall TailList [listExpr]) = do
     ListValue [] -> throw "TailList llamado en una lista vacía"
     _ -> throw "TailList requiere un tipo List"
 
-evalExpr (FunCall Len [listExpr]) = do
+evalExpr (FunCall InitList [listExpr]) = do
   listVal <- evalExpr listExpr
   case listVal of
-    ListValue xs -> return (IntValue (fromIntegral (length xs)))
-    _ -> throw "Len requiere un tipo List"
+    ListValue [] -> throw "InitList llamado en una lista vacía"
+    ListValue xs -> return (ListValue (init xs))
+    _ -> throw "InitList requiere un tipo List"
+
+evalExpr (FunCall ReverseList [listExpr]) = do
+  listVal <- evalExpr listExpr
+  case listVal of
+    ListValue xs -> return (ListValue (reverse xs))
+    _ -> throw "ReverseList requiere un tipo List"
 
 evalExpr (FunCall SortByWeight [listExpr]) = do
   listVal <- evalExpr listExpr
@@ -498,13 +541,6 @@ evalExpr (FunCall IsEmptyList [listExpr]) = do
     ListValue [] -> return (BoolValue True)
     ListValue _ -> return (BoolValue False)
     _ -> throw "IsEmptyList requiere un tipo List"
-
-evalExpr (FunCall AddList [listExpr, elemExpr]) = do
-  listVal <- evalExpr listExpr
-  elemVal <- evalExpr elemExpr
-  case listVal of
-    ListValue xs -> return (ListValue (xs ++ [elemVal]))
-    _ -> throw "AddList requiere un tipo List"
 
 -- Operaciones de Queue
 evalExpr (FunCall QueueLen [queueExpr]) = do
@@ -550,16 +586,17 @@ evalExpr (FunCall Find [nodeExpr, ufExpr]) = do
       node <- case nodeVal of
                 StringValue s -> return s
                 _ -> throw "Find requiere que node sea de tipo String"
-      let root = findRoot node pairs
-      return (StringValue root)
+      case findRoot node pairs of
+        Just root -> return (StringValue root)
+        Nothing -> throw ("El Nodo '" ++ node ++ "' no se encontró en UnionFind")
     _ -> throw "Find requiere un tipo UnionFind"
   where
-    findRoot :: Node -> [(Node, Node)] -> Node
+    findRoot :: Node -> [(Node, Node)] -> Maybe Node
     findRoot node pairs =
       case lookup node pairs of
-        Just parent | parent == node -> node
+        Just parent | parent == node -> Just node
         Just parent -> findRoot parent pairs
-        Nothing -> error $ "El Nodo '" ++ node ++ "' no se encontró en UnionFind" 
+        Nothing -> Nothing
 evalExpr (FunCall Union [node1Expr, node2Expr, ufExpr]) = do
   node1Val <- evalExpr node1Expr
   node2Val <- evalExpr node2Expr
@@ -572,8 +609,12 @@ evalExpr (FunCall Union [node1Expr, node2Expr, ufExpr]) = do
       node2 <- case node2Val of
                  StringValue s -> return s
                  _ -> throw "Union requiere que node2 sea de tipo String"
-      let root1 = findRoot node1 pairs
-      let root2 = findRoot node2 pairs
+      root1 <- case findRoot node1 pairs of
+        Just root -> return root
+        Nothing -> throw ("El Nodo '" ++ node1 ++ "' no se encontró en UnionFind")
+      root2 <- case findRoot node2 pairs of
+        Just root -> return root
+        Nothing -> throw ("El Nodo '" ++ node2 ++ "' no se encontró en UnionFind")
       if root1 == root2
         -- mismo conjunto
         then return (UnionFindValue (UnionFind pairs))
@@ -583,12 +624,33 @@ evalExpr (FunCall Union [node1Expr, node2Expr, ufExpr]) = do
           return (UnionFindValue (UnionFind newPairs))
     _ -> throw "Union requiere un tipo UnionFind"
   where
-    findRoot :: Node -> [(Node, Node)] -> Node
+    findRoot :: Node -> [(Node, Node)] -> Maybe Node
     findRoot node pairs =
       case lookup node pairs of
-        Just parent | parent == node -> node
+        Just parent | parent == node -> Just node
         Just parent -> findRoot parent pairs
-        Nothing -> error $ "El Nodo '" ++ node ++ "' no se encontró en UnionFind"
+        Nothing -> Nothing
 
--- Las no implementadas tiran error
-evalExpr (FunCall _ _) = throw "La funcion no fue implementada o los argumentos son invalidos"
+evalExpr (FunCall MetricClosure [graphExpr]) = do
+  graphVal <- evalExpr graphExpr
+  case graphVal of
+    GraphValue g ->
+      return (GraphValue (fst (metricClosure g)))
+    _ -> throw "MetricClosure requiere un tipo Graph"
+
+evalExpr (FunCall MetricClosurePaths [graphExpr]) = do
+  graphVal <- evalExpr graphExpr
+  case graphVal of
+    GraphValue g ->
+      let paths = snd (metricClosure g)
+          -- Convert to list of lists: [[source, target, [intermediate nodes]]]
+          pathsAsList = map (\(src, tgt, path) -> 
+                              ListValue [StringValue src, 
+                                        StringValue tgt, 
+                                        ListValue (map StringValue path)]
+                            ) paths
+      in return (ListValue pathsAsList)
+    _ -> throw "MetricClosurePaths requiere un tipo Graph"
+
+-- Las no implementadas tiran error, aunque si el parser esta bien hecho, evita que lleguemos a este punto
+evalExpr (FunCall f args) = throw ("La funcion " ++ show f ++ "(" ++ show args ++ ")" ++ " no fue implementada o los argumentos son invalidos")

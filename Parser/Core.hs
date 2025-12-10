@@ -135,12 +135,14 @@ parseFunction = do
     "deleteNode" -> return $ FunCall DeleteNode args
     "addEdge" -> return $ FunCall AddEdge args
     "deleteEdge" -> return $ FunCall DeleteEdge args
-    "complement" -> return $ FunCall GraphComplement args
+    "graphComplement" -> return $ FunCall GraphComplement args
     "graphUnion" -> return $ FunCall GraphUnion args
-    "intersection" -> return $ FunCall GraphIntersection args
+    "graphIntersection" -> return $ FunCall GraphIntersection args
     "getEdges" -> return $ FunCall GetEdges args
     "adjacentNodes" -> return $ FunCall AdjacentNodes args
     "adjacentEdges" -> return $ FunCall AdjacentEdges args
+    "metricClosure" -> return $ FunCall MetricClosure args
+    "metricClosurePaths" -> return $ FunCall MetricClosurePaths args
     
     -- Operaciones sobre aristas
     "getWeight" -> return $ FunCall GetWeight args
@@ -148,10 +150,15 @@ parseFunction = do
     "getNode2" -> return $ FunCall GetNode2 args
     
     -- Operaciones de List
-    "len" -> return $ FunCall Len args
-    "head" -> return $ FunCall HeadList args
-    "tail" -> return $ FunCall TailList args
-    "add" -> return $ FunCall AddList args
+    "lenList" -> return $ FunCall LenList args
+    "appendList" -> return $ FunCall AppendList args
+    "consList" -> return $ FunCall ConsList args
+    "concatList" -> return $ FunCall ConcatList args
+    "headList" -> return $ FunCall HeadList args
+    "lastList" -> return $ FunCall LastList args
+    "tailList" -> return $ FunCall TailList args
+    "initList" -> return $ FunCall InitList args
+    "reverseList" -> return $ FunCall ReverseList args
     "sortByWeight" -> return $ FunCall SortByWeight args
     
     -- Operaciones de Queue
