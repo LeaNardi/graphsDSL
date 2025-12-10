@@ -1,30 +1,26 @@
 g := graph [
-    ("A",[("B",7.0),("D",5.0)]),
-    ("B",[("E",7.0),("A",7.0)]),
-    ("C",[("E",5.0)]),
-    ("D",[("F",6.0),("A",5.0)]),
-    ("E",[("G",9.0),("B",7.0),("C",5.0)]),
-    ("F",[("D",6.0)]),
-    ("G",[("E",9.0)])
+    ("A", [("B", 7), ("D", 5)]),
+    ("B", [("E", 7), ("A", 7)]),
+    ("C", [("E", 5)]),
+    ("D", [("F", 6), ("A", 5)]),
+    ("E", [("G", 9), ("B", 7), ("C", 5)]),
+    ("F", [("D", 6)]),
+    ("G", [("E", 9)])
     ];
+print "Grafo para recorrido preorder:";
 print g;
 visualize(g, "Grafo_Ejemplo_Preorder");
 
-// Recorrido preorder (DFS - Depth First Search)
-print "Recorrido preorder (DFS - Depth First Search)";
-
-// Inicializar estructuras
 startNode := "A";
 preorderResult := emptyList;
 visited := emptyList;
 
-// Pila para Preorder
+// Esto es una pila 
 stack := emptyList;
 stack := appendList(stack, startNode);
 
+// Mientras la pila no esté vacía...
 while !isEmptyList(stack) do
-    // print("stack while loop:");
-    // print(stack);
     current := lastList(stack);
     stack := initList(stack);
     
@@ -33,30 +29,23 @@ while !isEmptyList(stack) do
     else
         visited := appendList(visited, current);
         
-        // Visitar nodo
-        // print current;
         preorderResult := appendList(preorderResult, current);
         
-        // Obtener vecinos
         neighbors := adjacentNodes(g, current);
-        // Se invierten para asegurar el comportamiento como pila
+        
+        // Pusimos una lista a funcionar como pila, asi que invertimos el orden para asegurar el comportamiento como pila...
         neighborsReversed := reverseList(neighbors);
-
-        // print("neighborsReversed:");
-        // print(neighborsReversed);
         
         for neighbor in neighborsReversed do
             cond inList(neighbor, visited) then
                 skip
             else
-                stack := appendList(stack, neighbor);
-                // print("stack inner loop:");
-                // print(stack)
+                stack := appendList(stack, neighbor)
             end
         end
     end
 end;
 
-print "Resultado Preorder";
+print "Resultado Preorder: ";
 print preorderResult
 

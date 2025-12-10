@@ -49,4 +49,4 @@ writeGraphToDotFile :: FilePath -> Value -> IO ()
 writeGraphToDotFile filepath graphValue = 
     case exportGraphToDot graphValue of
         Just dotContent -> writeFile filepath dotContent
-        Nothing -> putStrLn "Error: No es un valor de grafo valido"
+        Nothing -> putStrLn "Error: No es un valor de grafo valido para exportar a dot"
