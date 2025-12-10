@@ -36,6 +36,7 @@ while lenList(pending) > 0 do
   else
     skip
   end
+  end
 end;
 
 print(g);

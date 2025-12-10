@@ -26,7 +26,7 @@ g2 := g;
 
 print "01 - Grafo urbano inicial:";
 print g2;
-visualize(g2, "01_GrafoUrbano");
+visualize(g2, "01_GrafoUrbanoParcial");
 
 
 // ===============================================
@@ -47,7 +47,7 @@ gMetric := metricClosure(g2);
 
 print "02 - Grafo clausura metrica:";
 print gMetric;
-visualize(gMetric, "02_GrafoMetric");
+visualize(gMetric, "02_GrafoMetricParcial");
 
 gMetricPaths := metricClosurePaths(g2);
 print("Paths de la clausura metrica:");
