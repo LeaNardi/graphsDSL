@@ -1,0 +1,62 @@
+g := graph [
+    ("A",[("B",7.0),("D",5.0)]),
+    ("B",[("E",7.0),("A",7.0)]),
+    ("C",[("E",5.0)]),
+    ("D",[("F",6.0),("A",5.0)]),
+    ("E",[("G",9.0),("B",7.0),("C",5.0)]),
+    ("F",[("D",6.0)]),
+    ("G",[("E",9.0)])
+    ];
+print g;
+visualize(g, "Grafo_Ejemplo_Preorder");
+
+// Recorrido preorder (DFS - Depth First Search)
+print "Recorrido preorder (DFS - Depth First Search)";
+
+// Inicializar estructuras
+startNode := "A";
+preorderResult := emptyList;
+visited := emptyList;
+
+// Pila para Preorder
+stack := emptyList;
+stack := appendList(stack, startNode);
+
+while !isEmptyList(stack) do
+    // print("stack while loop:");
+    // print(stack);
+    current := lastList(stack);
+    stack := initList(stack);
+    
+    cond inList(current, visited) then
+        skip
+    else
+        visited := appendList(visited, current);
+        
+        // Visitar nodo
+        // print current;
+        preorderResult := appendList(preorderResult, current);
+        
+        // Obtener vecinos
+        neighbors := adjacentNodes(g, current);
+        // Se invierten para asegurar el comportamiento como pila
+        neighborsReversed := reverseList(neighbors);
+
+        // print("neighborsReversed:");
+        // print(neighborsReversed);
+        
+        for neighbor in neighborsReversed do
+            cond inList(neighbor, visited) then
+                skip
+            else
+                stack := appendList(stack, neighbor);
+                // print("stack inner loop:");
+                // print(stack)
+            end
+        end
+    end
+end;
+
+print "Resultado Preorder";
+print preorderResult
+

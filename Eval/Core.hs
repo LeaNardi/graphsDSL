@@ -495,6 +495,19 @@ evalExpr (FunCall TailList [listExpr]) = do
     ListValue [] -> throw "TailList llamado en una lista vacía"
     _ -> throw "TailList requiere un tipo List"
 
+evalExpr (FunCall InitList [listExpr]) = do
+  listVal <- evalExpr listExpr
+  case listVal of
+    ListValue [] -> throw "InitList llamado en una lista vacía"
+    ListValue xs -> return (ListValue (init xs))
+    _ -> throw "InitList requiere un tipo List"
+
+evalExpr (FunCall ReverseList [listExpr]) = do
+  listVal <- evalExpr listExpr
+  case listVal of
+    ListValue xs -> return (ListValue (reverse xs))
+    _ -> throw "ReverseList requiere un tipo List"
+
 evalExpr (FunCall SortByWeight [listExpr]) = do
   listVal <- evalExpr listExpr
   case listVal of
@@ -622,8 +635,22 @@ evalExpr (FunCall MetricClosure [graphExpr]) = do
   graphVal <- evalExpr graphExpr
   case graphVal of
     GraphValue g ->
-      return (GraphValue (metricClosure g))
+      return (GraphValue (fst (metricClosure g)))
     _ -> throw "MetricClosure requiere un tipo Graph"
+
+evalExpr (FunCall MetricClosurePaths [graphExpr]) = do
+  graphVal <- evalExpr graphExpr
+  case graphVal of
+    GraphValue g ->
+      let paths = snd (metricClosure g)
+          -- Convert to list of lists: [[source, target, [intermediate nodes]]]
+          pathsAsList = map (\(src, tgt, path) -> 
+                              ListValue [StringValue src, 
+                                        StringValue tgt, 
+                                        ListValue (map StringValue path)]
+                            ) paths
+      in return (ListValue pathsAsList)
+    _ -> throw "MetricClosurePaths requiere un tipo Graph"
 
 -- Las no implementadas tiran error, aunque si el parser esta bien hecho, evita que lleguemos a este punto
 evalExpr (FunCall f args) = throw ("La funcion " ++ show f ++ "(" ++ show args ++ ")" ++ " no fue implementada o los argumentos son invalidos")
