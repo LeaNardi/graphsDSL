@@ -1,5 +1,8 @@
 // Problema TSP (Traveling Salesman Problem) aplicado a recoleccion de residuos
 
+// Basado en:
+// https://www.geeksforgeeks.org/dsa/approximate-solution-for-travelling-salesman-problem-using-mst/
+
 // GRAFO URBANO (Cuadricula 4x4 con pesos)
 g := graph[
   ("A1", [("A2",99),("B1",1)]),
