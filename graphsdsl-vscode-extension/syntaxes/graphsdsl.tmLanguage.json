@@ -121,7 +121,7 @@
         },
         {
           "name": "entity.name.function.list.graphsdsl",
-          "match": "\\b(len|headList|lastList|tailList|appendList|consList|concatList|sortByWeight|inList|isEmptyList)\\b"
+          "match": "\\b(lenList|headList|lastList|tailList|appendList|consList|concatList|sortByWeight|inList|isEmptyList)\\b"
         },
         {
           "name": "entity.name.function.queue.graphsdsl",

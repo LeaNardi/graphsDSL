@@ -7,5 +7,6 @@ g := graph [
 ];
 
 aVersiesConexo := esConexo(g);
+print("El grafo es conexo? ");
 print(aVersiesConexo);
 visualize(g, "SolamenteUnGrafoInconexo")
