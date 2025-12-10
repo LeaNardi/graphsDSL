@@ -10,4 +10,4 @@ find . -name "*.hi" -delete
 find . -name "*.o" -delete
 find . -name "Main" -delete
 
-echo "Cleanup complete"
+echo "Cleanup complete" 

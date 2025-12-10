@@ -14,5 +14,5 @@ for /d %%D in ("%TARGET_DIR%\*") do (
     if exist "%%D\*.o" del /q "%%D\*.o"
 )
 
-echo Cleanup complete
+echo Cleanup complete 
 pause
