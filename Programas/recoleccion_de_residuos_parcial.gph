@@ -1,8 +1,6 @@
 // Problema TSP (Traveling Salesman Problem) aplicado a recoleccion de residuos
 
-
-// GRAFO URBANO (Cuadrícula 4x4 con pesos)
-
+// GRAFO URBANO (Cuadricula 4x4 con pesos)
 g := graph[
   ("A1", [("A2",99),("B1",1)]),
   ("A2", [("A1",99),("A3",1),("B2",1)]),
@@ -13,17 +11,19 @@ g := graph[
   ("B3", [("B2",1),("A3",1)])
 ];
 
-// OPCIONAL: Simular cortes de calle
+// Nodo en el que comienza el recorrido
+startNode := "A1";
 
+// OPCIONAL: Simular cortes de calle
 // g2 := deleteEdge(g, edge("B2", "C2"));
 // g2 := deleteEdge(g2, edge("C3", "D3"));
 
 // Si no hay cortes, g2 = g
 g2 := g;
 
-print "Grafo urbano inicial:";
+print "01 - Grafo urbano inicial:";
 print g2;
-visualize(g2, "GrafoUrbano");
+visualize(g2, "01_GrafoUrbano");
 
 
 // ===============================================
@@ -37,14 +37,18 @@ else
 end;
 
 
-// 2) CLAUSURA MÉTRICA
-// Convertimos g2 en un grafo completo con distancias mínimas
+// 2) CLAUSURA MeTRICA
+// Convertimos g2 en un grafo completo con distancias minimas
 
 gMetric := metricClosure(g2);
 
-print "Grafo clausura metrica:";
+print "02 - Grafo clausura metrica:";
 print gMetric;
-visualize(gMetric, "GrafoMetric");
+visualize(gMetric, "02_GrafoMetric");
+
+gMetricPaths := metricClosurePaths(g2);
+print("Paths de la clausura metrica:");
+print(gMetricPaths);
 
 
 // 3) TSP Aproximado usando MST (Minimum Spanning Tree) + DFS (Depth First Search)
@@ -62,7 +66,7 @@ uf := unionfind[
 
 
 // 3.3 Construir MST con Kruskal
-mst := emptyList;
+mst := graph [];
 
 for e in edges do
     n1 := getNode1(e);
@@ -74,65 +78,72 @@ for e in edges do
         skip
     else
         uf := union(r1, r2, uf);
-        mst := appendList(mst, e)
+        mst := addEdge(mst, e)
     end
 end;
 
-print "MST construido:";
+print "03 - MST construido:";
 print mst;
+visualize(mst, "03_MST");
 
 
 // 4) RECORRIDO FINAL (DFS sobre MST = TSP Aproximado)
 
-queue2 := queue [];
-visited2 := emptyList;
+// Inicializar estructuras
+preorderResult := emptyList;
+visited := emptyList;
 
-// enqueue inicial
-queue2 := enqueue(queue2, "A1");
+// Pila para Preorder
+stack := emptyList;
+stack := appendList(stack, startNode);
 
-while !isEmptyQueue(queue2) do
-    x := peek(queue2);
-    queue2 := dequeue(queue2);
-
-    cond inList(x, visited2) then
+while !isEmptyList(stack) do
+    current := lastList(stack);
+    stack := initList(stack);
+    
+    cond inList(current, visited) then
         skip
     else
-        visited2 := appendList(visited2, x);
+        visited := appendList(visited, current);
+        
+        // Visitar nodo
+        preorderResult := appendList(preorderResult, current);
+        
+        // Obtener vecinos
+        neighbors := adjacentNodes(mst, current);
+        // Se invierten para asegurar el comportamiento como pila
+        neighborsReversed := reverseList(neighbors);
 
-        for e in mst do
-            a := getNode1(e);
-            b := getNode2(e);
-
-            cond (a == x) then
-                queue2 := enqueue(queue2, b)
-            else
+        for neighbor in neighborsReversed do
+            cond inList(neighbor, visited) then
                 skip
-            end;
-
-            cond (b == x) then
-                queue2 := enqueue(queue2, a)
             else
-                skip
+                stack := appendList(stack, neighbor)
             end
         end
     end
 end;
 
+print "DFS sobre MST:";
+print preorderResult;
+
+
+visited2 := appendList(preorderResult, startNode);
 print "Recorrido TSP aproximado:";
 print visited2;
 
-// 5) Cálculo del costo total del recorrido TSP
-// usando únicamente la clausura métrica
+// 5) Calculo del costo total del recorrido TSP
+// usando unicamente la clausura metrica
 
 print "==== CALCULO DEL COSTO DEL RECORRIDO ====";
 
 // Inicializar costo
 total := 0;
 
-// Obtener todas las aristas del grafo métrico
+// Obtener todas las aristas del grafo metrico
 edgesMetric := getEdges(gMetric);
 
-// Si por algún motivo no hay recorrido, no hacemos nada
+// Si por algun motivo no hay recorrido, no hacemos nada
 cond isEmptyList(visited2) then
     print "No hay recorrido."
 else
@@ -143,7 +154,7 @@ else
     while !isEmptyList(rest) do
         next := headList(rest);
 
-        // Buscamos la distancia mínima entre prev y next
+        // Buscamos la distancia minima entre prev y next
         w := 0;
         foundEdge := 0;
 
@@ -152,7 +163,7 @@ else
                 u := getNode1(e);
                 v := getNode2(e);
 
-                // Comparación métrica: edge(u,v)
+                // Comparacion metrica: edge(u,v)
                 cond ((u == prev) && (v == next)) then
                     w := getWeight(e);
                     foundEdge := 1
@@ -171,311 +182,61 @@ else
 
         total := total + w;
 
-        // Avanzamos
         prev := next;
         rest := tailList(rest)
-    end;
+    end
 
-    // AGREGAR COSTO DE RETORNO al nodo inicial
-    primerNodo := headList(visited2);
-    ultimoNodo := prev;  // prev es el último nodo después del loop
-
-    // Buscar costo de retorno en el grafo métrico
-    wRetorno := 0;
-    foundEdgeRetorno := 0;
-
-    for e in edgesMetric do
-        cond (foundEdgeRetorno == 0) then
-            u := getNode1(e);
-            v := getNode2(e);
-
-            cond ((u == ultimoNodo) && (v == primerNodo)) then
-                wRetorno := getWeight(e);
-                foundEdgeRetorno := 1
-            else
-                cond ((u == primerNodo) && (v == ultimoNodo)) then
-                    wRetorno := getWeight(e);
-                    foundEdgeRetorno := 1
-                else
-                    skip
-                end
-            end
-        else
-            skip
-        end
-    end;
-
-    total := total + wRetorno
 end;
 
 print "Costo total del recorrido:";
 print total;
 
-// 6) RECONSTRUCCIÓN DEL CAMINO FISICO REAL EN g2
+// 6) RECONSTRUCCIoN DEL CAMINO FISICO REAL EN g2
 
-print "Reconstrucción del camino real:";
+print "Reconstruccion del camino real:";
 
-// Lista vacía donde concatenamos el recorrido físico real
-caminoReal := emptyList;
+// Lista con el primer nodo
+caminoReal := [startNode];
 
 // Obtener el camino hamiltoniano
 cond isEmptyList(visited2) then
-    skip
+    print "No hay recorrido."
 else
     prev := headList(visited2);
     rest := tailList(visited2);
-
+    
     while !isEmptyList(rest) do
         next := headList(rest);
 
-        // Reconstruimos el camino real entre prev y next con BFS
-        // -----------------------------------------------------
-
-        // Inicializamos estructuras
-        q := queue[];
-        q := enqueue(q, prev);
-
-        visited := emptyList;
-        parent := emptyList;   // lista de pares (nodo, padre)
-
-        found := 0;
-
-        while !isEmptyQueue(q) do
-            x := peek(q);
-            q := dequeue(q);
-
-            cond inList(x, visited) then
-                skip
-            else
-                visited := appendList(visited, x);
-
-                // si encontramos el destino terminamos BFS
-                cond (x == next) then
-                    found := 1
-                else
-                    neigh := adjacentNodes(g2, x);
-
-                    for y in neigh do
-                        cond inList(y, visited) then
-                            skip
-                        else
-                            // check si ya tiene padre registrado
-                            hasParent := 0;
-                            for p in parent do
-                                cond (getNode1(p) == y) then
-                                    hasParent := 1
-                                else
-                                    skip
-                                end
-                            end;
-
-                            cond (hasParent == 0) then
-                                // y no visitado y sin padre → lo agregamos a la cola
-                                q := enqueue(q, y);
-                                // registramos padre usando edge
-                                parent := appendList(parent, edge(y, x, 0))
-                            else
-                                skip
-                            end
-                        end
-                    end
-                end
-            end;
-
-            cond (found == 1) then
-                // salimos del while externo
-                q := queue[]    // forzamos corte
-            else
-                skip
-            end
-        end;
-
-              // Reconstrucción final: backtracking del camino
-
-        segmento := emptyList;
-        actual := next;
-
-        // armamos camino invertido: next → prev
-        while !(actual == prev) do
-            segmento := appendList(segmento, actual);
-
-            // buscamos su padre
-            padre := prev; // para el compilador, default
-            foundParent := 0;
-            for p in parent do
-                cond (foundParent == 0) then
-                    nodoP := getNode1(p);    // el hijo
-                    nodoPadre := getNode2(p); // el padre
-
-                    cond (nodoP == actual) then
-                        padre := nodoPadre;
-                        foundParent := 1
-                    else
-                        skip
-                    end
+        segmentoInvertido := emptyList;
+        foundPath := 0;
+        
+        for pathInfo in gMetricPaths do
+            cond (foundPath == 0) then
+                source := headList(pathInfo);
+                target := headList(tailList(pathInfo));
+                path := lastList(pathInfo);
+                
+                cond ((source == prev) && (target == next)) then
+                    segmentoInvertido := path;
+                    foundPath := 1
                 else
                     skip
                 end
-            end;
-
-            actual := padre
-        end;
-
-        // agregamos el nodo de inicio al final
-        segmento := appendList(segmento, prev);
-
-        // segmento = [next, ..., prev] - necesitamos [prev, ..., next]
-        // Para invertir con solo appendList: leer elementos y reconstruir al revés
-        segmentoInvertido := emptyList;
-        
-        // Método: para cada posición i desde el final hasta el inicio
-        lenSeg := lenList(segmento);
-        i := lenSeg;
-        while (i > 0) do
-            // obtener elemento en posición (i-1)
-            tempList := segmento;
-            j := 1;
-            while (j < i) do
-                tempList := tailList(tempList);
-                j := j + 1
-            end;
-            elemento := headList(tempList);
-            
-            // agregar al final de invertido
-            segmentoInvertido := appendList(segmentoInvertido, elemento);
-            i := i - 1
-        end;
-
-        // Ahora segmentoInvertido = [prev, ..., next] ✓
-
-        // concatenamos al camino global (evitando duplicar nodos)
-        cond isEmptyList(caminoReal) then
-            // primer segmento: agregar todo
-            for s in segmentoInvertido do
-                caminoReal := appendList(caminoReal, s)
-            end
-        else
-            // segmentos siguientes: saltar primer nodo (ya está en caminoReal)
-            segmentoSinPrimero := tailList(segmentoInvertido);
-            for s in segmentoSinPrimero do
-                caminoReal := appendList(caminoReal, s)
+            else
+                skip
             end
         end;
 
-        // avanzar
+        segmentoSinPrimero := tailList(segmentoInvertido);
+        for s in segmentoSinPrimero do
+            caminoReal := appendList(caminoReal, s)
+        end;
+
         prev := next;
         rest := tailList(rest)
-    end;
-
-    // AGREGAR CAMINO DE RETORNO al inicio
-    primerNodo := headList(visited2);
-    ultimoNodo := prev;  // prev es el último nodo
-
-    // BFS desde ultimoNodo hasta primerNodo
-    q := queue[];
-    q := enqueue(q, ultimoNodo);
-
-    visited := emptyList;
-    parent := emptyList;
-    found := 0;
-
-    while !isEmptyQueue(q) do
-        x := peek(q);
-        q := dequeue(q);
-
-        cond inList(x, visited) then
-            skip
-        else
-            visited := appendList(visited, x);
-
-            cond (x == primerNodo) then
-                found := 1
-            else
-                neigh := adjacentNodes(g2, x);
-
-                for y in neigh do
-                    cond inList(y, visited) then
-                        skip
-                    else
-                        hasParent := 0;
-                        for p in parent do
-                            cond (getNode1(p) == y) then
-                                hasParent := 1
-                            else
-                                skip
-                            end
-                        end;
-
-                        cond (hasParent == 0) then
-                            q := enqueue(q, y);
-                            parent := appendList(parent, edge(y, x, 0))
-                        else
-                            skip
-                        end
-                    end
-                end
-            end
-        end;
-
-        cond (found == 1) then
-            q := queue[]
-        else
-            skip
-        end
-    end;
-
-    // Reconstruir camino de retorno
-    segmento := emptyList;
-    actual := primerNodo;
-
-    while !(actual == ultimoNodo) do
-        segmento := appendList(segmento, actual);
-
-        padre := ultimoNodo;
-        foundParent := 0;
-        for p in parent do
-            cond (foundParent == 0) then
-                nodoP := getNode1(p);
-                nodoPadre := getNode2(p);
-
-                cond (nodoP == actual) then
-                    padre := nodoPadre;
-                    foundParent := 1
-                else
-                    skip
-                end
-            else
-                skip
-            end
-        end;
-
-        actual := padre
-    end;
-
-    segmento := appendList(segmento, ultimoNodo);
-
-    // Invertir segmento de retorno
-    lenSeg := lenList(segmento);
-    segmentoInvertido := emptyList;
-    i := lenSeg;
-    while (i > 0) do
-        tempList := segmento;
-        j := 1;
-        while (j < i) do
-            tempList := tailList(tempList);
-            j := j + 1
-        end;
-        elemento := headList(tempList);
-        segmentoInvertido := appendList(segmentoInvertido, elemento);
-        i := i - 1
-    end;
-
-    // Agregar segmento de retorno (sin duplicar último nodo)
-    segmentoSinPrimero := tailList(segmentoInvertido);
-    for s in segmentoSinPrimero do
-        caminoReal := appendList(caminoReal, s)
     end
 end;
 
-print "Camino físico real concatenado:";
+print "Camino fisico real concatenado:";
 print caminoReal

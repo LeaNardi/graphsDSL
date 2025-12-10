@@ -20,6 +20,9 @@ pending := edges;
 while lenList(pending) > 0 do
   edge_elem := headList(pending);
   pending := tailList(pending);
+while lenList(pending) > 0 do
+  edge_elem := headList(pending);
+  pending := tailList(pending);
 
   u := getNode1(edge_elem);
   v := getNode2(edge_elem);
@@ -35,5 +38,7 @@ while lenList(pending) > 0 do
   end
 end;
 
+print(g);
 visualize(g, "Original");
+print(mst);
 visualize(mst, "MST_Kruskal")

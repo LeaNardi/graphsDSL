@@ -2,7 +2,7 @@ module Eval.MetricClosure where
 import ASTGraphs ( Graph(..), Node, Weight )
 import Data.Map.Strict ( Map, fromList, findWithDefault )
 
-metricClosure :: Graph -> Graph
+metricClosure :: Graph -> (Graph, [(Node, Node, [Node])])
 metricClosure (Graph adjList) =
   let nodes = map fst adjList
       infinity :: Float
@@ -18,33 +18,58 @@ metricClosure (Graph adjList) =
                             Nothing -> infinity
                         Nothing        -> infinity
 
-      -- map inicial de distancias
-      dist0 :: Map (Node, Node) Float
+      -- map inicial de distancias y caminos
+      -- Para cada par (i,j), guardamos (distancia, lista de nodos en el camino)
+      dist0 :: Map (Node, Node) (Float, [Node])
       dist0 = fromList
-        [ ((n1, n2), initialDist n1 n2) | n1 <- nodes, n2 <- nodes ]
+        [ ((n1, n2), if initialDist n1 n2 < infinity 
+                     then (initialDist n1 n2, [n1, n2])
+                     else (infinity, []))
+        | n1 <- nodes, n2 <- nodes 
+        ]
       
+      -- Obtener distancia y camino
+      getDistPath :: Map (Node, Node) (Float, [Node]) -> Node -> Node -> (Float, [Node])
+      getDistPath dist from to = findWithDefault (infinity, []) (from, to) dist
       
-      -- Floyd-Warshall: iterate through each intermediate node
-      getDist :: Map (Node, Node) Float -> Node -> Node -> Float
-      getDist dist from to = findWithDefault infinity (from, to) dist
-      
-      stepNode :: Map (Node, Node) Float -> Node -> Map (Node, Node) Float
+      -- Floyd-Warshall con reconstrucción de caminos
+      stepNode :: Map (Node, Node) (Float, [Node]) -> Node -> Map (Node, Node) (Float, [Node])
       stepNode dist k = fromList
-        [ ((i, j), min (getDist dist i j) (getDist dist i k + getDist dist k j))
+        [ let (dij, pathij) = getDistPath dist i j
+              (dik, pathik) = getDistPath dist i k
+              (dkj, pathkj) = getDistPath dist k j
+              dikj = dik + dkj
+              -- Si el camino a través de k es mejor, concatenamos los caminos
+              newPath = if dikj < dij && not (null pathik) && not (null pathkj)
+                        then pathik ++ tail pathkj  -- tail para no duplicar el nodo k
+                        else pathij
+              newDist = min dij dikj
+          in ((i, j), (newDist, newPath))
         | i <- nodes, j <- nodes
         ]
       
-      distFinal :: Map (Node, Node) Float
+      distFinal :: Map (Node, Node) (Float, [Node])
       distFinal = foldl stepNode dist0 nodes
       
-      -- Build new adjacency list
       newAdj :: [(Node, [(Node, Weight)])]
       newAdj =
         [ (node,
-            [ (target, getDist distFinal node target)
+            [ (target, fst (getDistPath distFinal node target))
             | target <- nodes, node /= target
             ]
           )
         | node <- nodes
         ]
-  in Graph newAdj
+      
+      allPaths :: [(Node, Node, [Node])]
+      allPaths = 
+        [ (i, j, path) 
+        | i <- nodes
+        , j <- nodes
+        , i /= j
+        , let (dist, path) = getDistPath distFinal i j
+        , dist < infinity
+        , not (null path)
+        ]
+        
+  in (Graph newAdj, allPaths)
