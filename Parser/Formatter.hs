@@ -42,12 +42,32 @@ formatComm indent comm = case comm of
         indentStr indent ++ "Print (" ++ show expr ++ ")"
 
     ForNeighbors v g from upto body ->
-        indentStr indent ++ "ForNeighbors " ++ show v ++ " in \n" ++ 
-        indentStr indent ++ show g ++ "\n" ++       
-        indentStr indent ++ " from (" ++ show from ++ ") upto (" ++ show upto ++ ")\n" ++
+        indentStr indent ++ "ForNeighbors " ++ show v ++ "\n" ++
+        indentStr indent ++ "  (" ++ show g ++ ")\n" ++
+        indentStr indent ++ "  (from: " ++ show from ++ ")\n" ++
+        indentStr indent ++ "  (upto: " ++ show upto ++ ")\n" ++
         indentStr indent ++ "  (" ++ formatComm 0 body ++ ")"
 
-        
+    ForNodes v g body ->
+        indentStr indent ++ "ForNodes " ++ show v ++ "\n" ++
+        indentStr indent ++ "  (" ++ show g ++ ")\n" ++
+        indentStr indent ++ "  (" ++ formatComm 0 body ++ ")"
+
+    ForEdges e g body ->
+        indentStr indent ++ "ForEdges " ++ show e ++ "\n" ++
+        indentStr indent ++ "  (" ++ show g ++ ")\n" ++
+        indentStr indent ++ "  (" ++ formatComm 0 body ++ ")"
+
+    ForIncident e g from body ->
+        indentStr indent ++ "ForIncident " ++ show e ++ "\n" ++
+        indentStr indent ++ "  (" ++ show g ++ ")\n" ++
+        indentStr indent ++ "  (" ++ show from ++ ")\n" ++
+        indentStr indent ++ "  (" ++ formatComm 0 body ++ ")"
+
+    ForComponent gVar g body ->
+        indentStr indent ++ "ForComponent " ++ show gVar ++ "\n" ++
+        indentStr indent ++ "  (" ++ show g ++ ")\n" ++
+        indentStr indent ++ "  (" ++ formatComm 0 body ++ ")"
 
 indentStr :: Int -> String
 indentStr n = replicate n ' '

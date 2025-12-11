@@ -110,4 +110,8 @@ data Comm = Skip
           | Visualize Expr Expr -- Visualize grafo nombreArchivo
           | Print Expr
           | ForNeighbors Variable Expr Expr Expr Comm -- forNeighbors nodeVar in graphExpr from startNodeExpr upto limitExpr do bodyComm end
+          | ForNodes Variable Expr Comm
+          | ForEdges Variable Expr Comm
+          | ForIncident Variable Expr Expr Comm
+          | ForComponent Variable Expr Comm
  deriving (Show, Eq)

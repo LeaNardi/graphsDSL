@@ -25,6 +25,11 @@ parseSimpleComm = try parseSkip
                <|> try parseAssignment
                <|> try parseVisualize
                <|> try parseForNeighbors
+               <|> try parseForNeighbors
+               <|> try parseForNodes
+               <|> try parseForEdges
+               <|> try parseForIncident
+               <|> try parseForComponent
 
 -- =====================================
 -- Parser de expresiones generales
@@ -305,3 +310,49 @@ parseForNeighbors = do
     bodyComm <- parseComm
     reserved gdsl "end"
     return $ ForNeighbors nodeVar graphExpr startNodeExpr limitExpr bodyComm
+
+parseForNodes :: Parser Comm
+parseForNodes = do
+    reserved gdsl "forNodes"
+    nodeVar <- identifier gdsl
+    reserved gdsl "in"
+    graphExpr <- parseExpr
+    reserved gdsl "do"
+    bodyComm <- parseComm
+    reserved gdsl "end"
+    return $ ForNodes nodeVar graphExpr bodyComm
+
+parseForEdges :: Parser Comm
+parseForEdges = do
+    reserved gdsl "forEdges"
+    edgeVar <- identifier gdsl
+    reserved gdsl "in"
+    graphExpr <- parseExpr
+    reserved gdsl "do"
+    bodyComm <- parseComm
+    reserved gdsl "end"
+    return $ ForEdges edgeVar graphExpr bodyComm
+
+parseForIncident :: Parser Comm
+parseForIncident = do
+    reserved gdsl "forIncident"
+    edgeVar <- identifier gdsl
+    reserved gdsl "in"
+    graphExpr <- parseExpr
+    reserved gdsl "on"
+    nodeExpr <- parseExpr
+    reserved gdsl "do"
+    bodyComm <- parseComm
+    reserved gdsl "end"
+    return $ ForIncident edgeVar graphExpr nodeExpr bodyComm
+
+parseForComponent :: Parser Comm
+parseForComponent = do
+    reserved gdsl "forComponent"
+    graphVar <- identifier gdsl
+    reserved gdsl "in"
+    graphExpr <- parseExpr
+    reserved gdsl "do"
+    bodyComm <- parseComm
+    reserved gdsl "end"
+    return $ ForComponent graphVar graphExpr bodyComm

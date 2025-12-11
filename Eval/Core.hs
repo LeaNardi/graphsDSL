@@ -86,6 +86,89 @@ evalComm (ForNeighbors nodeVar graphExpr startNodeExpr limitExpr bodyComm) = do
               update nodeVar (StringValue n)
               evalComm bodyComm
           ) nodes
+evalComm (ForNodes nodeVar graphExpr bodyComm) = do
+    graphVal <- evalExpr graphExpr
+
+    graph <- case graphVal of
+        GraphValue g -> return g
+        _ -> throw "forNodes: el argumento después de 'in' debe ser un Graph"
+
+    let Graph adj = graph
+        allNodes = map fst adj
+
+    mapM_ (\n -> do
+              update nodeVar (StringValue n)
+              evalComm bodyComm
+          ) allNodes
+evalComm (ForEdges edgeVar graphExpr bodyComm) = do
+    graphVal <- evalExpr graphExpr
+
+    graph <- case graphVal of
+        GraphValue g -> return g
+        _ -> throw "forEdges: el argumento después de 'in' debe ser un Graph"
+
+    let Graph adj = graph
+
+        -- aristas únicas (u < v)
+        edges = [ Edge u v w
+                | (u, ns) <- adj
+                , (v, w) <- ns
+                , u < v
+                ]
+
+    mapM_ (\(Edge u v w) -> do
+              update edgeVar (EdgeValue (Edge u v w))
+              evalComm bodyComm
+          ) edges
+evalComm (ForIncident edgeVar graphExpr nodeExpr bodyComm) = do
+    graphVal <- evalExpr graphExpr
+    nodeVal  <- evalExpr nodeExpr
+
+    graph <- case graphVal of
+        GraphValue g -> return g
+        _ -> throw "forIncident: el argumento después de 'in' debe ser un Graph"
+
+    target <- case nodeVal of
+        StringValue s -> return s
+        _ -> throw "forIncident: el nodo después de 'on' debe ser String"
+
+    let Graph adj = graph
+        incident = case lookup target adj of
+            Just ns -> [ Edge target v w | (v,w) <- ns ]
+            Nothing -> []
+
+    mapM_ (\e -> do
+              update edgeVar (EdgeValue e)
+              evalComm bodyComm
+          ) incident
+evalComm (ForComponent gVar gExpr bodyComm) = do
+    graphVal <- evalExpr gExpr
+
+    graph@(Graph adj) <- case graphVal of
+        GraphValue g -> return g
+        _ -> throw "forComponent: el argumento después de 'in' debe ser un Graph"
+
+    let comps = components graph
+
+    mapM_ (\compNodes -> do
+              let subAdj = [ (u, [(v,w) | (v,w) <- ns, v `elem` compNodes])
+                           | (u, ns) <- adj
+                           , u `elem` compNodes
+                           ]
+              update gVar (GraphValue (Graph subAdj))
+              evalComm bodyComm
+          ) comps
+
+
+-- Funciones auxiliares
+components :: Graph -> [[Node]]
+components (Graph adj) = go (map fst adj) []
+  where
+    go [] comps = reverse comps
+    go (x:xs) comps =
+        let comp = bfsComponent x adj
+            remaining = filter (`notElem` comp) xs
+        in go remaining (comp : comps)
 
 bfsLimited :: Graph -> Node -> Integer -> [Node]
 bfsLimited (Graph adj) start lim = go [(start,0)] [] []
@@ -99,7 +182,16 @@ bfsLimited (Graph adj) start lim = go [(start,0)] [] []
                 next = [(x, d+1) | x <- neigh]
             in go (q ++ next) (n:visited) (n:acc)
 
--- Funciones auxiliares
+bfsComponent :: Node -> [(Node, [(Node, Float)])] -> [Node]
+bfsComponent start adj = go [start] [] 
+  where
+    go [] visited = reverse visited
+    go (n:q) visited
+        | n `elem` visited = go q visited
+        | otherwise =
+            let neigh = maybe [] (map fst) (lookup n adj)
+            in go (q ++ neigh) (n:visited)
+
 addSimpleEdge :: Graph -> Edge -> Graph
 addSimpleEdge (Graph []) (Edge u v w)  = Graph [(u, [(v , w)])]
 addSimpleEdge (Graph ((node, nodesWeights) : remaining)) (Edge u v w) 
