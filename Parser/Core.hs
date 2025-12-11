@@ -24,6 +24,7 @@ parseSimpleComm = try parseSkip
                <|> try parsePrint
                <|> try parseAssignment
                <|> try parseVisualize
+               <|> try parseForNeighbors
 
 -- =====================================
 -- Parser de expresiones generales
@@ -289,3 +290,18 @@ parseVisualize = do
   case args of
     [graphExpr, fileNameExpr] -> return $ Visualize graphExpr fileNameExpr
     _ -> fail "visualize espera 2 argumentos: visualize(grafo, \"nombre.png\"" --Este error lo manejamos desde aca o desde otro lado?
+
+parseForNeighbors :: Parser Comm
+parseForNeighbors = do
+    reserved gdsl "forNeighbors"
+    nodeVar <- identifier gdsl
+    reserved gdsl "in"
+    graphExpr <- parseExpr
+    reserved gdsl "from"
+    startNodeExpr <- parseExpr
+    reserved gdsl "upto"
+    limitExpr <- parseExpr
+    reserved gdsl "do"
+    bodyComm <- parseComm
+    reserved gdsl "end"
+    return $ ForNeighbors nodeVar graphExpr startNodeExpr limitExpr bodyComm

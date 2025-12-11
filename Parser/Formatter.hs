@@ -41,5 +41,13 @@ formatComm indent comm = case comm of
     Print expr ->
         indentStr indent ++ "Print (" ++ show expr ++ ")"
 
+    ForNeighbors v g from upto body ->
+        indentStr indent ++ "ForNeighbors " ++ show v ++ " in \n" ++ 
+        indentStr indent ++ show g ++ "\n" ++       
+        indentStr indent ++ " from (" ++ show from ++ ") upto (" ++ show upto ++ ")\n" ++
+        indentStr indent ++ "  (" ++ formatComm 0 body ++ ")"
+
+        
+
 indentStr :: Int -> String
 indentStr n = replicate n ' '

@@ -109,4 +109,5 @@ data Comm = Skip
           | For Variable Expr Comm
           | Visualize Expr Expr -- Visualize grafo nombreArchivo
           | Print Expr
+          | ForNeighbors Variable Expr Expr Expr Comm -- forNeighbors nodeVar in graphExpr from startNodeExpr upto limitExpr do bodyComm end
  deriving (Show, Eq)

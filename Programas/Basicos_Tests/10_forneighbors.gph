@@ -1,0 +1,12 @@
+g := graph[
+  ("A", [("B",1),("C",1)]),
+  ("B", [("A",1),("D",1)]),
+  ("C", [("A",1)]),
+  ("D", [("B",1)])
+];
+
+print "Vecinos de A hasta distancia 1:";
+
+forNeighbors x in g from "A" upto 1 do
+    print x
+end

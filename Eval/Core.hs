@@ -63,6 +63,41 @@ evalComm (Print expr) = do
     formatValue (ListValue vs)  = "[" ++ intercalate ", " (map formatValue vs) ++ "]"
     formatValue (QueueValue (Queue vs)) = "Queue: " ++ show (map formatValue vs)
     formatValue (UnionFindValue uf) = show uf
+evalComm (ForNeighbors nodeVar graphExpr startNodeExpr limitExpr bodyComm) = do
+    graphVal <- evalExpr graphExpr
+    startVal <- evalExpr startNodeExpr
+    limitVal <- evalExpr limitExpr
+
+    graph <- case graphVal of
+        GraphValue g -> return g
+        _ -> throw "forNeighbors: el argumento después de 'in' debe ser un Graph"
+
+    start <- case startVal of
+        StringValue s -> return s
+        _ -> throw "forNeighbors: el nodo inicial debe ser String"
+
+    lim <- case limitVal of
+        IntValue i -> return i
+        _ -> throw "forNeighbors: el limite debe ser Int"
+
+    let nodes = bfsLimited graph start lim
+
+    mapM_ (\n -> do 
+              update nodeVar (StringValue n)
+              evalComm bodyComm
+          ) nodes
+
+bfsLimited :: Graph -> Node -> Integer -> [Node]
+bfsLimited (Graph adj) start lim = go [(start,0)] [] []
+  where
+    go [] _ acc = reverse acc
+    go ((n,d):q) visited acc
+        | n `elem` visited = go q visited acc
+        | d > lim          = go q visited acc
+        | otherwise =
+            let neigh = maybe [] (map fst) (lookup n adj)
+                next = [(x, d+1) | x <- neigh]
+            in go (q ++ next) (n:visited) (n:acc)
 
 -- Funciones auxiliares
 addSimpleEdge :: Graph -> Edge -> Graph
