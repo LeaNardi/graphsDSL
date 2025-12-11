@@ -45,9 +45,7 @@ visualize(g2, "01_GrafoUrbano");
 // 1) VERIFICAR CONECTIVIDAD GLOBAL
 // Si no es conexo, se cancela el TSP inmediatamente
 
-cond esConexo(g2) then
-    skip
-else
+cond !esConexo(g2) then
     print "ERROR: Hay barrios inaccesibles. No se puede planificar la ruta."
 end;
 
@@ -91,9 +89,7 @@ for e in edges do
     r1 := find(n1, uf);
     r2 := find(n2, uf);
 
-    cond (r1 == r2) then
-        skip
-    else
+    cond !(r1 == r2) then
         uf := union(r1, r2, uf);
         mst := addEdge(mst, e)
     end
@@ -118,9 +114,7 @@ while !isEmptyList(stack) do
     current := lastList(stack);
     stack := initList(stack);
     
-    cond inList(current, visited) then
-        skip
-    else
+    cond !inList(current, visited) then
         visited := appendList(visited, current);
         
         // Visitar nodo
@@ -132,9 +126,7 @@ while !isEmptyList(stack) do
         neighborsReversed := reverseList(neighbors);
 
         for neighbor in neighborsReversed do
-            cond inList(neighbor, visited) then
-                skip
-            else
+            cond !inList(neighbor, visited) then
                 stack := appendList(stack, neighbor)
             end
         end
@@ -188,12 +180,8 @@ else
                     cond ((u == next) && (v == prev)) then
                         w := getWeight(e);
                         foundEdge := 1
-                    else
-                        skip
                     end
                 end
-            else
-                skip
             end
         end;
 
@@ -237,11 +225,7 @@ else
                 cond ((source == prev) && (target == next)) then
                     segmentoInvertido := path;
                     foundPath := 1
-                else
-                    skip
                 end
-            else
-                skip
             end
         end;
 

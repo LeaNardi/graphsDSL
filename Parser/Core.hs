@@ -1,5 +1,6 @@
 module Parser.Core where
 
+import Text.Parsec (lookAhead, eof, manyTill, choice)
 import Text.ParserCombinators.Parsec ( chainl1, sepBy, (<|>), try, Parser, option, many )
 import Text.Parsec.Token ( GenTokenParser( integer, reserved, identifier, brackets, parens, stringLiteral, reservedOp, comma), float )
 import Data.Functor (($>))
@@ -244,16 +245,42 @@ parseUnionFind = do
 parseSkip :: Parser Comm
 parseSkip = reserved gdsl "skip" $> Skip
 
+parseCommUntil :: [String] -> Parser Comm
+parseCommUntil stops = do
+    cmds <- manyTill parseOne (lookAhead stopMarker <|> eofMarker)
+    return (foldSeq cmds)
+  where
+    parseOne = do
+        c <- parseSimpleComm
+        option () (reservedOp gdsl ";" >> return ())
+        return c
+
+    stopMarker = choice (map (reserved gdsl) stops)
+    eofMarker  = eof $> ()
+
+    foldSeq []     = Skip
+    foldSeq [c]    = c
+    foldSeq (c:cs) = Seq c (foldSeq cs)
+
 parseCond :: Parser Comm
 parseCond = do
-  reserved gdsl "cond"
-  cond <- parseExpr
-  reserved gdsl "then"
-  trueBranch <- parseComm
-  reserved gdsl "else"
-  falseBranch <- parseComm
-  reserved gdsl "end"
-  return $ Cond cond trueBranch falseBranch
+    reserved gdsl "cond"
+    condExpr <- parseExpr
+    reserved gdsl "then"
+    trueBranch <- parseCommUntil ["else", "end"]
+    parseElse condExpr trueBranch
+  where
+    parseElse condExpr trueBranch =
+          try (do
+                  reserved gdsl "else"
+                  falseBranch <- parseCommUntil ["end"]
+                  reserved gdsl "end"
+                  return (Cond condExpr trueBranch falseBranch)
+              )
+          <|> (do
+                  reserved gdsl "end"
+                  return (Cond condExpr trueBranch Skip)
+              )
 
 parseWhile :: Parser Comm
 parseWhile = do
