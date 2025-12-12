@@ -1,7 +1,7 @@
 module Parser.Core where
 
-import Text.Parsec (lookAhead, eof, manyTill, choice)
-import Text.ParserCombinators.Parsec ( chainl1, sepBy, (<|>), try, Parser, option, many )
+import Text.Parsec ( notFollowedBy, choice)
+import Text.ParserCombinators.Parsec ( try, sepBy, (<|>), Parser, option, many )
 import Text.Parsec.Token ( GenTokenParser( integer, reserved, identifier, brackets, parens, stringLiteral, reservedOp, comma), float )
 import Data.Functor (($>))
 
@@ -253,20 +253,20 @@ parseSkip = reserved gdsl "skip" $> Skip
 
 parseCommUntil :: [String] -> Parser Comm
 parseCommUntil stops = do
-    cmds <- manyTill parseOne (lookAhead stopMarker <|> eofMarker)
-    return (foldSeq cmds)
+    first <- parseSimpleComm
+    rest  <- many (try parseSeq)
+    return (foldSeq (first : rest))
   where
-    parseOne = do
-        c <- parseSimpleComm
-        option () (reservedOp gdsl ";" >> return ())
-        return c
+    parseSeq = do
+        reservedOp gdsl ";"
+        notFollowedBy stopMarker
+        parseSimpleComm
 
     stopMarker = choice (map (reserved gdsl) stops)
-    eofMarker  = eof $> ()
 
-    foldSeq []     = Skip
     foldSeq [c]    = c
     foldSeq (c:cs) = Seq c (foldSeq cs)
+    foldSeq []     = Skip
 
 parseCond :: Parser Comm
 parseCond = do
