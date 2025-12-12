@@ -9,14 +9,13 @@ g := graph[
 
 dist := getNodeMap(g);
 next := getNodeMap(g);
-nodes := getNodes(dist);
 
-for i in nodes do
+forNodes i in g do
 
     row := getNodeMap(g);
     row_next := getNodeMap(g);
 
-    for j in nodes do
+    forNodes j in g do
 
         cond i == j then
 
@@ -40,7 +39,7 @@ for i in nodes do
 
             cond !found then
 
-                row := setValue(row, j, 999999)
+                row := setValue(row, j, 999999);
                 next := setValue(next, i, "inalcanzable")
             
             end
@@ -52,9 +51,9 @@ for i in nodes do
 
 end;
 
-for k in nodes do
-    for i in nodes do
-        for j in nodes do
+forNodes k in g do
+    forNodes i in g do
+        forNodes j in g do
 
             row_i := getValue(dist, i);
 
@@ -78,9 +77,9 @@ end;
 
 g_mc := graph [];
 
-for i in nodes do
+forNodes i in g do
 
-    for j in nodes do
+    forNodes j in g do
 
         cond !(i == j) then
             
@@ -94,11 +93,11 @@ end;
 
 paths := getNodeMap(g);
 
-for i in nodes do
+forNodes i in g do
 
     path_from_i := getNodeMap(g);
 
-    for j in nodes do
+    forNodes j in g do
 
         path_from_i_to_j := emptyList;
 
@@ -125,7 +124,7 @@ for i in nodes do
 
         cond inalcanzable then
 
-            path_from_i_to_j := emptyList;
+            path_from_i_to_j := emptyList
 
         end;
 

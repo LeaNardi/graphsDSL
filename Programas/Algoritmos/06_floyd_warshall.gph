@@ -8,17 +8,16 @@ g := graph[
 ];
 
 dist := getNodeMap(g);
-nodes := getNodes(dist);
 
-for i in nodes do
+forNodes i in g do
 
     row := getNodeMap(g);
 
-    for j in nodes do
+    forNodes j in g do
 
         cond i == j then
 
-            row := setValue(row, j, 0);
+            row := setValue(row, j, 0)
 
         else
             
@@ -29,7 +28,8 @@ for i in nodes do
                 cond getNode2(e) == j then
 
                     row := setValue(row, j, getWeight(e));
-                    found := true;
+                    found := true
+                    
                 end
 
             end;
@@ -46,9 +46,11 @@ for i in nodes do
 
 end;
 
-for k in nodes do
-    for i in nodes do
-        for j in nodes do
+// Floyd–Warshall
+
+forNodes k in g do
+    forNodes i in g do
+        forNodes j in g do
 
             row_i := getValue(dist, i);
 
@@ -66,20 +68,4 @@ for k in nodes do
     end
 end;
 
-g_mc := graph [];
-
-for i in nodes do
-
-    for j in nodes do
-
-        cond !(i == j) then
-            
-            g_mc := addEdge(g_mc, edge(i, j, getValue(getValue(dist, i), j)))
-        
-        end
-
-    end
-
-end;
-
-visualize(g_mc, "ejemplo07_clausura_metrica")
+print dist

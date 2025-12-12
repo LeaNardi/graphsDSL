@@ -27,7 +27,7 @@ while !isEmptyList(nodes) do
     for x in tailList(nodes) do
         cond getValue(dist, x) < minDist then
             minDist := getValue(dist, x);
-            u := x;
+            u := x
         end
     end;
 
@@ -35,7 +35,7 @@ while !isEmptyList(nodes) do
 
     for x in nodes do
         cond !(x == u) then
-            newNodes := appendList(newNodes, x);
+            newNodes := appendList(newNodes, x)
         end
     end;
 

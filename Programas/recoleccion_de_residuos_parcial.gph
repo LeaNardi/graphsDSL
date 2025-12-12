@@ -136,9 +136,6 @@ print "==== CALCULO DEL COSTO DEL RECORRIDO ====";
 // Inicializar costo
 total := 0;
 
-// Obtener todas las aristas del grafo metrico
-edgesMetric := getEdges(gMetric);
-
 // Si por algun motivo no hay recorrido, no hacemos nada
 cond isEmptyList(visited2) then
     print "No hay recorrido."
@@ -154,7 +151,7 @@ else
         w := 0;
         foundEdge := 0;
 
-        for e in edgesMetric do
+        forEdges e in gMetric do
             cond (foundEdge == 0) then
                 u := getNode1(e);
                 v := getNode2(e);
