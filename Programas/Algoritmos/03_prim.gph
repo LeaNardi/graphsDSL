@@ -46,12 +46,8 @@ while lenList(candidatos) > 0 do
     for e in adjacentEdges(g, nodoSiguiente) do
       cond !(inList(getNode2(e), nodosVisitados)) then
         candidatos := appendList(candidatos, e)
-      else
-        skip
       end
     end
-  else
-    skip
   end
 end;
 

@@ -1,0 +1,35 @@
+g := graph[
+  ("A1", [("A2",99),("B1",1)]),
+  ("A2", [("A1",99),("A3",1),("B2",1)]),
+  ("A3", [("A2",1),("B3",1)]),
+  ("B1", [("A1",1),("B2",1)]),
+  ("B2", [("B1",1),("A2",1),("B3",1)]),
+  ("B3", [("B2",1),("A3",1)]),
+  ("A99", [("B99",7)]),
+  ("B99", [("A99",7)])
+];
+
+print "Nodos:";
+forNodes n in g do
+    print n
+end;
+
+print "Vecinos de A1 hasta 2 niveles:";
+forNeighbors x in g from "A1" upto 2 do
+    print x
+end;
+
+print "Pesos de las aristas del grafo:";
+forEdges e in g do
+    print getWeight(e)
+end;
+
+print "Aristas incidentes a A1:";
+forIncident e in g on "A1" do
+    print e
+end;
+
+print "Componentes conexas del grafo:";
+forComponent h in g do
+    print h
+end

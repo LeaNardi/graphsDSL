@@ -30,8 +30,6 @@ while !(isEmptyQueue(Q)) do
             // Aca se arma el BFSTree
             bfsTree := addNode(bfsTree, getNode2(neighbor));
             bfsTree := addEdge(bfsTree, edge(node, getNode2(neighbor), getWeight(neighbor)))
-        else
-            skip
         end
     end
 end;

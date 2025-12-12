@@ -20,22 +20,20 @@ pending := edges;
 while lenList(pending) > 0 do
   edge_elem := headList(pending);
   pending := tailList(pending);
-while lenList(pending) > 0 do
-  edge_elem := headList(pending);
-  pending := tailList(pending);
+  while lenList(pending) > 0 do
+    edge_elem := headList(pending);
+    pending := tailList(pending);
 
-  u := getNode1(edge_elem);
-  v := getNode2(edge_elem);
-  w := getWeight(edge_elem);
-  rep_u := find(u, uf);
-  rep_v := find(v, uf);
+    u := getNode1(edge_elem);
+    v := getNode2(edge_elem);
+    w := getWeight(edge_elem);
+    rep_u := find(u, uf);
+    rep_v := find(v, uf);
 
-  cond !(rep_u == rep_v) then
-    mst := addEdge(mst, edge(u, v, w)) ;
-    uf := union(u, v, uf)
-  else
-    skip
-  end
+    cond !(rep_u == rep_v) then
+      mst := addEdge(mst, edge(u, v, w)) ;
+      uf := union(u, v, uf)
+    end
   end
 end;
 

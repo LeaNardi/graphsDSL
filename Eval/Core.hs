@@ -63,8 +63,138 @@ evalComm (Print expr) = do
     formatValue (ListValue vs)  = "[" ++ intercalate ", " (map formatValue vs) ++ "]"
     formatValue (QueueValue (Queue vs)) = "Queue: " ++ show (map formatValue vs)
     formatValue (UnionFindValue uf) = show uf
+    formatValue (NodeMapValue nm) = show nm
+    formatValue NoneValue = "none"
+
+evalComm (ForNeighbors nodeVar graphExpr startNodeExpr limitExpr bodyComm) = do
+    graphVal <- evalExpr graphExpr
+    startVal <- evalExpr startNodeExpr
+    limitVal <- evalExpr limitExpr
+
+    graph <- case graphVal of
+        GraphValue g -> return g
+        _ -> throw "forNeighbors: el argumento después de 'in' debe ser un Graph"
+
+    start <- case startVal of
+        StringValue s -> return s
+        _ -> throw "forNeighbors: el nodo inicial debe ser String"
+
+    lim <- case limitVal of
+        IntValue i -> return i
+        _ -> throw "forNeighbors: el limite debe ser Int"
+
+    let nodes = bfsLimited graph start lim
+
+    mapM_ (\n -> do 
+              update nodeVar (StringValue n)
+              evalComm bodyComm
+          ) nodes
+evalComm (ForNodes nodeVar graphExpr bodyComm) = do
+    graphVal <- evalExpr graphExpr
+
+    graph <- case graphVal of
+        GraphValue g -> return g
+        _ -> throw "forNodes: el argumento después de 'in' debe ser un Graph"
+
+    let Graph adj = graph
+        allNodes = map fst adj
+
+    mapM_ (\n -> do
+              update nodeVar (StringValue n)
+              evalComm bodyComm
+          ) allNodes
+evalComm (ForEdges edgeVar graphExpr bodyComm) = do
+    graphVal <- evalExpr graphExpr
+
+    graph <- case graphVal of
+        GraphValue g -> return g
+        _ -> throw "forEdges: el argumento después de 'in' debe ser un Graph"
+
+    let Graph adj = graph
+
+        -- aristas únicas (u < v)
+        edges = [ Edge u v w
+                | (u, ns) <- adj
+                , (v, w) <- ns
+                , u < v
+                ]
+
+    mapM_ (\(Edge u v w) -> do
+              update edgeVar (EdgeValue (Edge u v w))
+              evalComm bodyComm
+          ) edges
+evalComm (ForIncident edgeVar graphExpr nodeExpr bodyComm) = do
+    graphVal <- evalExpr graphExpr
+    nodeVal  <- evalExpr nodeExpr
+
+    graph <- case graphVal of
+        GraphValue g -> return g
+        _ -> throw "forIncident: el argumento después de 'in' debe ser un Graph"
+
+    target <- case nodeVal of
+        StringValue s -> return s
+        _ -> throw "forIncident: el nodo después de 'on' debe ser String"
+
+    let Graph adj = graph
+        incident = case lookup target adj of
+            Just ns -> [ Edge target v w | (v,w) <- ns ]
+            Nothing -> []
+
+    mapM_ (\e -> do
+              update edgeVar (EdgeValue e)
+              evalComm bodyComm
+          ) incident
+evalComm (ForComponent gVar gExpr bodyComm) = do
+    graphVal <- evalExpr gExpr
+
+    graph@(Graph adj) <- case graphVal of
+        GraphValue g -> return g
+        _ -> throw "forComponent: el argumento después de 'in' debe ser un Graph"
+
+    let comps = components graph
+
+    mapM_ (\compNodes -> do
+              let subAdj = [ (u, [(v,w) | (v,w) <- ns, v `elem` compNodes])
+                           | (u, ns) <- adj
+                           , u `elem` compNodes
+                           ]
+              update gVar (GraphValue (Graph subAdj))
+              evalComm bodyComm
+          ) comps
+
 
 -- Funciones auxiliares
+components :: Graph -> [[Node]]
+components (Graph adj) = go (map fst adj) []
+  where
+    go [] comps = reverse comps
+    go (x:xs) comps =
+        let comp = bfsComponent x adj
+            remaining = filter (`notElem` comp) xs
+        in go remaining (comp : comps)
+
+bfsLimited :: Graph -> Node -> Integer -> [Node]
+bfsLimited (Graph adj) start lim = go [(start,0)] [] []
+  where
+    go [] _ acc = reverse acc
+    go ((n,d):q) visited acc
+        | n `elem` visited = go q visited acc
+        | d > lim          = go q visited acc
+        | otherwise =
+            let neigh = maybe [] (map fst) (lookup n adj)
+                next = [(x, d+1) | x <- neigh]
+            in go (q ++ next) (n:visited) (n:acc)
+
+bfsComponent :: Node -> [(Node, [(Node, Float)])] -> [Node]
+bfsComponent start adj = go [start] [] 
+  where
+    go [] visited = reverse visited
+    go (n:q) visited
+        | n `elem` visited = go q visited
+        | otherwise =
+            let neigh = maybe [] (map fst) (lookup n adj)
+            in go (q ++ neigh) (n:visited)
+
 addSimpleEdge :: Graph -> Edge -> Graph
 addSimpleEdge (Graph []) (Edge u v w)  = Graph [(u, [(v , w)])]
 addSimpleEdge (Graph ((node, nodesWeights) : remaining)) (Edge u v w) 
@@ -651,6 +781,55 @@ evalExpr (FunCall MetricClosurePaths [graphExpr]) = do
                             ) paths
       in return (ListValue pathsAsList)
     _ -> throw "MetricClosurePaths requiere un tipo Graph"
+
+evalExpr (FunCall GetNodeMap [graphExpr]) = do
+    graphVal <- evalExpr graphExpr
+    case graphVal of
+        GraphValue (Graph adj) ->
+            let ns = map fst adj
+                initial = [(n, NoneValue) | n <- ns]
+            in return (NodeMapValue initial)
+        _ -> throw "getNodeMap requiere un Graph"
+
+evalExpr (FunCall GetValue [mapExpr, keyExpr]) = do
+    mapVal <- evalExpr mapExpr
+    keyVal <- evalExpr keyExpr
+    key <- case keyVal of
+              StringValue s -> return s
+              _ -> throw "getValue requiere que la clave sea String"
+    case mapVal of
+        NodeMapValue pairs ->
+            case lookup key pairs of
+                Just v  -> return v
+                Nothing -> throw $ "getValue: clave '" ++ key ++ "' no encontrada en NodeMap"
+        _ -> throw "getValue requiere un NodeMap"
+
+evalExpr (FunCall SetValue [mapExpr, keyExpr, valExpr]) = do
+    mapVal <- evalExpr mapExpr
+    keyVal <- evalExpr keyExpr
+    valVal <- evalExpr valExpr
+
+    key <- case keyVal of
+              StringValue s -> return s
+              _ -> throw "setValue requiere que la clave sea String"
+
+    case mapVal of
+        NodeMapValue pairs ->
+            let newPairs = updateKey pairs key valVal
+            in return (NodeMapValue newPairs)
+        _ -> throw "setValue requiere un NodeMap"
+  where
+    updateKey [] k v = [(k, v)]
+    updateKey ((k0,v0):rest) k v
+        | k0 == k  = (k,v) : rest
+        | otherwise = (k0,v0) : updateKey rest k v
+
+evalExpr (FunCall GetNodes [mapExpr]) = do
+    mapVal <- evalExpr mapExpr
+    case mapVal of
+        NodeMapValue pairs ->
+            return (ListValue [StringValue k | (k,_) <- pairs])
+        _ -> throw "getNodes requiere un NodeMap"
 
 -- Las no implementadas tiran error, aunque si el parser esta bien hecho, evita que lleguemos a este punto
 evalExpr (FunCall f args) = throw ("La funcion " ++ show f ++ "(" ++ show args ++ ")" ++ " no fue implementada o los argumentos son invalidos")

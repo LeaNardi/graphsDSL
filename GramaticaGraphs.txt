@@ -3,6 +3,11 @@ comm ::=  skip
         | cond expr then comm else comm end
         | while expr do comm end
         | for identifier in expr do comm end
+        | forNeighbors identifier in expr from expr upto expr do comm end
+        | forNodes identifier in expr do comm end
+        | forEdges identifier in expr do comm end
+        | forIncident identifier in expr on expr do comm end
+        | forComponent identifier in expr do comm end
         | visualize ( expr , expr )
         | print expr
         | identifier := expr
@@ -20,17 +25,16 @@ logicalexp ::= comparisonexp
                 | logicalexp || comparisonexp
 
 
-
 comparisonexp ::= arithmeticexp
                 | comparisonexp == arithmeticexp
                 | comparisonexp < arithmeticexp
                 | comparisonexp > arithmeticexp
 
 
-
 arithmeticexp ::= term
                 | arithmeticexp + term
                 | arithmeticexp - term
+
 
 term ::= factor
         | term * factor
@@ -52,6 +56,7 @@ factor ::= number
         | unary
         | ( expr )
 
+
 number ::= integer | float
 
 boolean ::= true | false
@@ -64,48 +69,63 @@ identifier ::= [a-zA-Z][a-zA-Z0-9_]*
 
 unary ::= - factor | ! factor
 
+
 graphexp ::= graph [ nodelist ]
+
 
 nodelist ::= nodeassoc
         | nodeassoc , nodelist
         | ε
 
+
 nodeassoc ::= ( expr , [ edgelist ] )
+
 
 edgelist ::= edgeassoc
         | edgeassoc , edgelist
         | ε
 
+
 edgeassoc ::= ( expr , expr )
+
 
 edgeexp ::= edge ( expr , expr , expr )
 
+
 listexp ::= [ exprlist ]
+
 
 queueexp ::= queue [ exprlist ]
 
+
 unionfindexp ::= unionfind [ ufpairlist ]
+
 
 ufpairlist ::= ufpair
         | ufpair , ufpairlist
         | ε
 
+
 ufpair ::= ( expr , expr )
+
 
 exprlist ::= expr
         | expr , exprlist
         | ε
 
+
 functioncall ::= functionname ( arglist )
+
 
 functionname ::= addNode | deleteNode | addEdge | deleteEdge
         | graphComplement | graphUnion | graphIntersection | getEdges | adjacentNodes | adjacentEdges
         | getWeight | getNode1 | getNode2
-        | lenList | appendList | consList | concatList | headList | lastList | tailList | initList | reverseList |sortByWeight
+        | lenList | appendList | consList | concatList | headList | lastList | tailList | initList | reverseList | sortByWeight
         | queueLen | enqueue | dequeue | peek | isEmpty
         | union | find
         | esCiclico | esConexo | inList | isEmptyList
         | metricClosure | metricClosurePaths
+
 
 arglist ::= expr
         | expr , arglist
