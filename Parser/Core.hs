@@ -185,6 +185,12 @@ parseFunction = do
     "inList" -> return $ FunCall InList args
     "isEmptyList" -> return $ FunCall IsEmptyList args
     
+    -- Operaciones de NodeMap
+    "getNodeMap" -> return $ FunCall GetNodeMap args
+    "getValue" -> return $ FunCall GetValue args
+    "setValue" -> return $ FunCall SetValue args
+    "getNodes" -> return $ FunCall GetNodes args 
+    
     _ -> fail $ "Unknown function: " ++ funName
 
 -- ====================

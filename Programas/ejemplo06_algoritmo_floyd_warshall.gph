@@ -1,0 +1,72 @@
+g := graph[
+  ("A1", [("A2",99),("B1",1)]),
+  ("A2", [("A1",99),("A3",1),("B2",1)]),
+  ("A3", [("A2",1),("B3",1)]),
+  ("B1", [("A1",1),("B2",1)]),
+  ("B2", [("B1",1),("A2",1),("B3",1)]),
+  ("B3", [("B2",1),("A3",1)])
+];
+
+dist := getNodeMap(g);
+nodes := getNodes(dist);
+
+for i in nodes do
+
+    row := getNodeMap(g);
+
+    for j in nodes do
+
+        cond i == j then
+
+            row := setValue(row, j, 0)
+
+        else
+            
+            found := false;
+            
+            forIncident e in g on i do
+
+                cond getNode2(e) == j then
+
+                    row := setValue(row, j, getWeight(e));
+                    found := true
+                    
+                end
+
+            end;
+
+            cond !found then
+
+                row := setValue(row, j, 999999)
+            
+            end
+        end
+    end;
+
+    dist := setValue(dist, i, row)
+
+end;
+
+// Floyd–Warshall
+
+for k in nodes do
+    for i in nodes do
+        for j in nodes do
+
+            row_i := getValue(dist, i);
+
+            dik := getValue(row_i, k);
+            dkj := getValue(getValue(dist, k), j);
+            dij := getValue(row_i, j);
+
+            cond dik + dkj < dij then
+                
+                row_i := setValue(row_i, j, dik + dkj);
+                dist := setValue(dist, i, row_i)
+            
+            end
+        end
+    end
+end;
+
+print dist

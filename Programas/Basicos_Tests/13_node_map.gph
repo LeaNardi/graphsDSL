@@ -1,0 +1,16 @@
+g := graph[
+  ("A1", [("A2",99),("B1",1)]),
+  ("A2", [("A1",99),("A3",1),("B2",1)]),
+  ("A3", [("A2",1),("B3",1)]),
+  ("B1", [("A1",1),("B2",1)]),
+  ("B2", [("B1",1),("A2",1),("B3",1)]),
+  ("B3", [("B2",1),("A3",1)]),
+  ("A99", [("B99",7)]),
+  ("B99", [("A99",7)])
+];
+
+dist := getNodeMap(g);
+print getNodes(dist);
+print getValue(dist, "A1");
+dist := setValue(dist, "A1", 5);
+print getValue(dist, "A1")

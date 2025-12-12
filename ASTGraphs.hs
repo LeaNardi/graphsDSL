@@ -18,6 +18,8 @@ data Value = IntValue Integer
            | ListValue [Value]
            | QueueValue Queue
            | UnionFindValue UnionFind
+           | NodeMapValue NodeMap
+           | NoneValue
  deriving (Show, Eq)
 
 -- Tipos de datos especificos
@@ -26,6 +28,7 @@ type Node = String
 data Edge = Edge Node Node Weight deriving (Show, Eq)
 data Queue = Queue [Value] deriving (Show, Eq)
 data UnionFind = UnionFind [(Node, Node)] deriving (Show, Eq)  -- (element, parent)
+type NodeMap = [(Node, Value)]
 
 -- Expresion generica
 data Expr = 
@@ -96,7 +99,10 @@ data FunctionType =
   | IsEmptyQueue
   
   -- Operaciones de UnionFind
-  | Union | Find    
+  | Union | Find
+
+    -- Operaciones de NodeMap
+  | GetNodeMap | GetValue | SetValue | GetNodes
   
  deriving (Show, Eq)
 

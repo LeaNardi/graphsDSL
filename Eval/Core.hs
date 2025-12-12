@@ -63,6 +63,9 @@ evalComm (Print expr) = do
     formatValue (ListValue vs)  = "[" ++ intercalate ", " (map formatValue vs) ++ "]"
     formatValue (QueueValue (Queue vs)) = "Queue: " ++ show (map formatValue vs)
     formatValue (UnionFindValue uf) = show uf
+    formatValue (NodeMapValue nm) = show nm
+    formatValue NoneValue = "none"
+
 evalComm (ForNeighbors nodeVar graphExpr startNodeExpr limitExpr bodyComm) = do
     graphVal <- evalExpr graphExpr
     startVal <- evalExpr startNodeExpr
@@ -778,6 +781,55 @@ evalExpr (FunCall MetricClosurePaths [graphExpr]) = do
                             ) paths
       in return (ListValue pathsAsList)
     _ -> throw "MetricClosurePaths requiere un tipo Graph"
+
+evalExpr (FunCall GetNodeMap [graphExpr]) = do
+    graphVal <- evalExpr graphExpr
+    case graphVal of
+        GraphValue (Graph adj) ->
+            let ns = map fst adj
+                initial = [(n, NoneValue) | n <- ns]
+            in return (NodeMapValue initial)
+        _ -> throw "getNodeMap requiere un Graph"
+
+evalExpr (FunCall GetValue [mapExpr, keyExpr]) = do
+    mapVal <- evalExpr mapExpr
+    keyVal <- evalExpr keyExpr
+    key <- case keyVal of
+              StringValue s -> return s
+              _ -> throw "getValue requiere que la clave sea String"
+    case mapVal of
+        NodeMapValue pairs ->
+            case lookup key pairs of
+                Just v  -> return v
+                Nothing -> throw $ "getValue: clave '" ++ key ++ "' no encontrada en NodeMap"
+        _ -> throw "getValue requiere un NodeMap"
+
+evalExpr (FunCall SetValue [mapExpr, keyExpr, valExpr]) = do
+    mapVal <- evalExpr mapExpr
+    keyVal <- evalExpr keyExpr
+    valVal <- evalExpr valExpr
+
+    key <- case keyVal of
+              StringValue s -> return s
+              _ -> throw "setValue requiere que la clave sea String"
+
+    case mapVal of
+        NodeMapValue pairs ->
+            let newPairs = updateKey pairs key valVal
+            in return (NodeMapValue newPairs)
+        _ -> throw "setValue requiere un NodeMap"
+  where
+    updateKey [] k v = [(k, v)]
+    updateKey ((k0,v0):rest) k v
+        | k0 == k  = (k,v) : rest
+        | otherwise = (k0,v0) : updateKey rest k v
+
+evalExpr (FunCall GetNodes [mapExpr]) = do
+    mapVal <- evalExpr mapExpr
+    case mapVal of
+        NodeMapValue pairs ->
+            return (ListValue [StringValue k | (k,_) <- pairs])
+        _ -> throw "getNodes requiere un NodeMap"
 
 -- Las no implementadas tiran error, aunque si el parser esta bien hecho, evita que lleguemos a este punto
 evalExpr (FunCall f args) = throw ("La funcion " ++ show f ++ "(" ++ show args ++ ")" ++ " no fue implementada o los argumentos son invalidos")
