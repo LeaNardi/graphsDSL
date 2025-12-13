@@ -9,8 +9,14 @@ g := graph[
   ("B99", [("A99",7)])
 ];
 
+visualize(g, "Grafo_NodeMap_Tests");
 dist := getNodeMap(g);
-print getNodes(dist);
+print "Map inicial:";
+print dist;
+print "getValue(dist, \"A1\")";
 print getValue(dist, "A1");
 dist := setValue(dist, "A1", 5);
-print getValue(dist, "A1")
+print "getValue(dist, \"A1\")";
+print getValue(dist, "A1");
+print "Map Final:";
+print dist

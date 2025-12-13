@@ -63,8 +63,8 @@ evalComm (Print expr) = do
     formatValue (ListValue vs)  = "[" ++ intercalate ", " (map formatValue vs) ++ "]"
     formatValue (QueueValue (Queue vs)) = "Queue: " ++ show (map formatValue vs)
     formatValue (UnionFindValue uf) = show uf
-    formatValue (NodeMapValue nm) = show nm
-    formatValue NoneValue = "none"
+    formatValue (NodeMapValue mv) = "nodeMap: [" ++ intercalate ", " (map formatValueElemMap mv) ++ "]"
+      where formatValueElemMap (k, v) = "(" ++ k ++ ", " ++ formatValue v ++ ")"
 
 evalComm (ForNeighbors nodeVar graphExpr startNodeExpr limitExpr bodyComm) = do
     graphVal <- evalExpr graphExpr
@@ -787,7 +787,7 @@ evalExpr (FunCall GetNodeMap [graphExpr]) = do
     case graphVal of
         GraphValue (Graph adj) ->
             let ns = map fst adj
-                initial = [(n, NoneValue) | n <- ns]
+                initial = [(n, StringValue "none") | n <- ns]
             in return (NodeMapValue initial)
         _ -> throw "getNodeMap requiere un Graph"
 
@@ -815,11 +815,15 @@ evalExpr (FunCall SetValue [mapExpr, keyExpr, valExpr]) = do
 
     case mapVal of
         NodeMapValue pairs ->
-            let newPairs = updateKey pairs key valVal
-            in return (NodeMapValue newPairs)
+            -- Check if key exists before updating
+            case lookup key pairs of
+                Nothing -> throw $ "setValue: la clave '" ++ key ++ "' no pertenece a los nodos del grafo original."
+                Just _ -> let newPairs = updateKey pairs key valVal
+                          in return (NodeMapValue newPairs)
         _ -> throw "setValue requiere un NodeMap"
+
   where
-    updateKey [] k v = [(k, v)]
+    updateKey [] k v = [(k, v)] -- No deberia alcanzarse por "case lookup key pairs of"
     updateKey ((k0,v0):rest) k v
         | k0 == k  = (k,v) : rest
         | otherwise = (k0,v0) : updateKey rest k v

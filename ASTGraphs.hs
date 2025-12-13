@@ -19,7 +19,6 @@ data Value = IntValue Integer
            | QueueValue Queue
            | UnionFindValue UnionFind
            | NodeMapValue NodeMap
-           | NoneValue
  deriving (Show, Eq)
 
 -- Tipos de datos especificos
