@@ -125,6 +125,7 @@ functionname ::= addNode | deleteNode | addEdge | deleteEdge
         | union | find
         | esCiclico | esConexo | inList | isEmptyList
         | metricClosure | metricClosurePaths
+        | getConnectedComponents
 
 
 arglist ::= expr

@@ -554,6 +554,40 @@ evalExpr (FunCall EsCiclico [graphExpr]) = do
                   newVisited = node : visited
               in any (dfs newVisited newPath) neighbors
 
+evalExpr (FunCall GetConnectedComponents [graphExpr]) = do
+  graphVal <- evalExpr graphExpr
+  case graphVal of
+    GraphValue (Graph adjList) -> do
+      case adjList of
+        [] -> return (ListValue [])
+        _ -> do
+          let allNodes = map fst adjList
+          let componentGraphs = findAllComponents adjList allNodes []
+          return (ListValue componentGraphs)
+    _ -> throw "GetConnectedComponents requiere un tipo Graph"
+  where
+    findAllComponents :: [(Node, [(Node, Weight)])] -> [Node] -> [Value] -> [Value]
+    findAllComponents _ [] componentsList = componentsList
+    findAllComponents adjList (firstNode:remainingNodes) componentsList =
+      let connectedNodes = bfsNodeGenerator adjList [firstNode] [firstNode]
+          componentGraph = GraphValue (generateGraph connectedNodes (Graph adjList))
+          newRemaining = filter (`notElem` connectedNodes) remainingNodes
+      in findAllComponents adjList newRemaining (componentsList ++ [componentGraph])
+    
+    bfsNodeGenerator :: [(Node, [(Node, Weight)])] -> [Node] -> [Node] -> [Node]
+    bfsNodeGenerator _ [] visited = visited
+    bfsNodeGenerator adjList (current_node:queue) visited =
+      let neighbors = maybe [] (map fst) (lookup current_node adjList)
+          newNeighbors = [n | n <- neighbors, n `notElem` visited]
+          newVisited = visited ++ newNeighbors
+          newQueue = queue ++ newNeighbors
+      in bfsNodeGenerator adjList newQueue newVisited
+    
+    generateGraph :: [Node] -> Graph -> Graph
+    generateGraph nodes (Graph completeAdj) = 
+      let adjList = [(n, maybe [] id (lookup n completeAdj)) | n <- nodes]
+      in Graph adjList
+
 evalExpr (FunCall EsConexo [graphExpr]) = do
   graphVal <- evalExpr graphExpr
   case graphVal of
@@ -569,8 +603,8 @@ evalExpr (FunCall EsConexo [graphExpr]) = do
   where
     bfsReachable :: [(Node, [(Node, Weight)])] -> [Node] -> [Node] -> [Node]
     bfsReachable _ [] visited = visited
-    bfsReachable adjList (node:queue) visited =
-      let neighbors = maybe [] (map fst) (lookup node adjList)
+    bfsReachable adjList (current_node:queue) visited =
+      let neighbors = maybe [] (map fst) (lookup current_node adjList)
           newNeighbors = [n | n <- neighbors, n `notElem` visited]
           newVisited = visited ++ newNeighbors
           newQueue = queue ++ newNeighbors

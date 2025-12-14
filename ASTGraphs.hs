@@ -82,7 +82,7 @@ data FunctionType =
   | GraphComplement | GraphUnion | GraphIntersection
   | GetEdges | AdjacentNodes | AdjacentEdges
   | EsCiclico | EsConexo
-  | MetricClosure | MetricClosurePaths
+  | MetricClosure | MetricClosurePaths | GetConnectedComponents
   
   -- Operaciones de Edge
   | GetWeight | GetNode1 | GetNode2

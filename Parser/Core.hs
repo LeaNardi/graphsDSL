@@ -150,6 +150,7 @@ parseFunction = do
     "adjacentEdges" -> return $ FunCall AdjacentEdges args
     "metricClosure" -> return $ FunCall MetricClosure args
     "metricClosurePaths" -> return $ FunCall MetricClosurePaths args
+    "getConnectedComponents" -> return $ FunCall GetConnectedComponents args
     
     -- Operaciones sobre aristas
     "getWeight" -> return $ FunCall GetWeight args
