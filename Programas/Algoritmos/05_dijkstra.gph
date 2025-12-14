@@ -1,0 +1,59 @@
+g := graph[
+  ("A1", [("A2",99),("B1",1)]),
+  ("A2", [("A1",99),("A3",1),("B2",1)]),
+  ("A3", [("A2",1),("B3",1)]),
+  ("B1", [("A1",1),("B2",1)]),
+  ("B2", [("B1",1),("A2",1),("B3",1)]),
+  ("B3", [("B2",1),("A3",1)])
+];
+
+start := "A1";
+
+dist := getNodeMap(g);
+prev := getNodeMap(g);
+nodes := getNodes(dist);
+
+for u in nodes do
+    dist := setValue(dist, u, 999999)
+end;
+
+dist := setValue(dist, start, 0);
+
+while !isEmptyList(nodes) do
+
+    u := headList(nodes);
+    minDist := getValue(dist, u);
+
+    for x in tailList(nodes) do
+        cond getValue(dist, x) < minDist then
+            minDist := getValue(dist, x);
+            u := x
+        end
+    end;
+
+    newNodes := emptyList;
+
+    for x in nodes do
+        cond !(x == u) then
+            newNodes := appendList(newNodes, x)
+        end
+    end;
+
+    nodes := newNodes;
+
+    forIncident e in g on u do
+
+        v := getNode2(e);
+        w := getWeight(e);
+
+        alt := getValue(dist, u) + w;
+
+        cond alt < getValue(dist, v) then
+            dist := setValue(dist, v, alt);
+            prev := setValue(prev, v, u)
+        end
+    end
+end;
+
+print dist;
+print prev

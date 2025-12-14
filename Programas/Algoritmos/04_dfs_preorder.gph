@@ -24,9 +24,8 @@ while !isEmptyList(stack) do
     current := lastList(stack);
     stack := initList(stack);
     
-    cond inList(current, visited) then
-        skip
-    else
+    cond !inList(current, visited) then
+        
         visited := appendList(visited, current);
         
         preorderResult := appendList(preorderResult, current);
@@ -37,9 +36,7 @@ while !isEmptyList(stack) do
         neighborsReversed := reverseList(neighbors);
         
         for neighbor in neighborsReversed do
-            cond inList(neighbor, visited) then
-                skip
-            else
+            cond !inList(neighbor, visited) then
                 stack := appendList(stack, neighbor)
             end
         end

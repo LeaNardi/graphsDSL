@@ -1,6 +1,7 @@
 module Parser.Core where
 
-import Text.ParserCombinators.Parsec ( chainl1, sepBy, (<|>), try, Parser, option, many )
+import Text.Parsec ( notFollowedBy, choice)
+import Text.ParserCombinators.Parsec ( try, sepBy, (<|>), Parser, option, many )
 import Text.Parsec.Token ( GenTokenParser( integer, reserved, identifier, brackets, parens, stringLiteral, reservedOp, comma), float )
 import Data.Functor (($>))
 
@@ -25,6 +26,11 @@ parseSimpleComm = try parseSkip
                <|> try parseAssignment
                <|> try parseVisualize
                <|> try parseForNeighbors
+               <|> try parseForNeighbors
+               <|> try parseForNodes
+               <|> try parseForEdges
+               <|> try parseForIncident
+               <|> try parseForComponent
 
 -- =====================================
 -- Parser de expresiones generales
@@ -144,6 +150,7 @@ parseFunction = do
     "adjacentEdges" -> return $ FunCall AdjacentEdges args
     "metricClosure" -> return $ FunCall MetricClosure args
     "metricClosurePaths" -> return $ FunCall MetricClosurePaths args
+    "getConnectedComponents" -> return $ FunCall GetConnectedComponents args
     
     -- Operaciones sobre aristas
     "getWeight" -> return $ FunCall GetWeight args
@@ -179,7 +186,13 @@ parseFunction = do
     "inList" -> return $ FunCall InList args
     "isEmptyList" -> return $ FunCall IsEmptyList args
     
-    _ -> fail $ "Unknown function: " ++ funName
+    -- Operaciones de NodeMap
+    "getNodeMap" -> return $ FunCall GetNodeMap args
+    "getValue" -> return $ FunCall GetValue args
+    "setValue" -> return $ FunCall SetValue args
+    "getNodes" -> return $ FunCall GetNodes args 
+    
+    _ -> fail $ "Funcion no definida: " ++ funName
 
 -- ====================
 -- Constructores de grafos
@@ -239,16 +252,42 @@ parseUnionFind = do
 parseSkip :: Parser Comm
 parseSkip = reserved gdsl "skip" $> Skip
 
+parseCommUntil :: [String] -> Parser Comm
+parseCommUntil stops = do
+    first <- parseSimpleComm
+    rest  <- many (try parseSeq)
+    return (foldSeq (first : rest))
+  where
+    parseSeq = do
+        reservedOp gdsl ";"
+        notFollowedBy stopMarker
+        parseSimpleComm
+
+    stopMarker = choice (map (reserved gdsl) stops)
+
+    foldSeq [c]    = c
+    foldSeq (c:cs) = Seq c (foldSeq cs)
+    foldSeq []     = Skip
+
 parseCond :: Parser Comm
 parseCond = do
-  reserved gdsl "cond"
-  cond <- parseExpr
-  reserved gdsl "then"
-  trueBranch <- parseComm
-  reserved gdsl "else"
-  falseBranch <- parseComm
-  reserved gdsl "end"
-  return $ Cond cond trueBranch falseBranch
+    reserved gdsl "cond"
+    condExpr <- parseExpr
+    reserved gdsl "then"
+    trueBranch <- parseCommUntil ["else", "end"]
+    parseElse condExpr trueBranch
+  where
+    parseElse condExpr trueBranch =
+          try (do
+                  reserved gdsl "else"
+                  falseBranch <- parseCommUntil ["end"]
+                  reserved gdsl "end"
+                  return (Cond condExpr trueBranch falseBranch)
+              )
+          <|> (do
+                  reserved gdsl "end"
+                  return (Cond condExpr trueBranch Skip)
+              )
 
 parseWhile :: Parser Comm
 parseWhile = do
@@ -289,7 +328,7 @@ parseVisualize = do
   args <- parens gdsl $ sepBy parseExpr (comma gdsl) --2 argumentos
   case args of
     [graphExpr, fileNameExpr] -> return $ Visualize graphExpr fileNameExpr
-    _ -> fail "visualize espera 2 argumentos: visualize(grafo, \"nombre.png\"" --Este error lo manejamos desde aca o desde otro lado?
+    _ -> fail "visualize espera 2 argumentos: visualize(grafo, \"nombre.png\""
 
 parseForNeighbors :: Parser Comm
 parseForNeighbors = do
@@ -305,3 +344,49 @@ parseForNeighbors = do
     bodyComm <- parseComm
     reserved gdsl "end"
     return $ ForNeighbors nodeVar graphExpr startNodeExpr limitExpr bodyComm
+
+parseForNodes :: Parser Comm
+parseForNodes = do
+    reserved gdsl "forNodes"
+    nodeVar <- identifier gdsl
+    reserved gdsl "in"
+    graphExpr <- parseExpr
+    reserved gdsl "do"
+    bodyComm <- parseComm
+    reserved gdsl "end"
+    return $ ForNodes nodeVar graphExpr bodyComm
+
+parseForEdges :: Parser Comm
+parseForEdges = do
+    reserved gdsl "forEdges"
+    edgeVar <- identifier gdsl
+    reserved gdsl "in"
+    graphExpr <- parseExpr
+    reserved gdsl "do"
+    bodyComm <- parseComm
+    reserved gdsl "end"
+    return $ ForEdges edgeVar graphExpr bodyComm
+
+parseForIncident :: Parser Comm
+parseForIncident = do
+    reserved gdsl "forIncident"
+    edgeVar <- identifier gdsl
+    reserved gdsl "in"
+    graphExpr <- parseExpr
+    reserved gdsl "on"
+    nodeExpr <- parseExpr
+    reserved gdsl "do"
+    bodyComm <- parseComm
+    reserved gdsl "end"
+    return $ ForIncident edgeVar graphExpr nodeExpr bodyComm
+
+parseForComponent :: Parser Comm
+parseForComponent = do
+    reserved gdsl "forComponent"
+    graphVar <- identifier gdsl
+    reserved gdsl "in"
+    graphExpr <- parseExpr
+    reserved gdsl "do"
+    bodyComm <- parseComm
+    reserved gdsl "end"
+    return $ ForComponent graphVar graphExpr bodyComm

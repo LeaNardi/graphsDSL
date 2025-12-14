@@ -1,0 +1,139 @@
+g := graph[
+  ("A1", [("A2",99),("B1",1)]),
+  ("A2", [("A1",99),("A3",1),("B2",1)]),
+  ("A3", [("A2",1),("B3",1)]),
+  ("B1", [("A1",1),("B2",1)]),
+  ("B2", [("B1",1),("A2",1),("B3",1)]),
+  ("B3", [("B2",1),("A3",1)])
+];
+
+dist := getNodeMap(g);
+next := getNodeMap(g);
+
+forNodes i in g do
+
+    row := getNodeMap(g);
+    row_next := getNodeMap(g);
+
+    forNodes j in g do
+
+        cond i == j then
+
+            row := setValue(row, j, 0);
+            row_next := setValue(row_next, j, j)
+
+        else
+            
+            found := false;
+            
+            forIncident e in g on i do
+
+                cond getNode2(e) == j then
+
+                    row := setValue(row, j, getWeight(e));
+                    row_next := setValue(row_next, j, j);
+                    found := true
+                end
+
+            end;
+
+            cond !found then
+
+                row := setValue(row, j, 999999);
+                next := setValue(next, i, "inalcanzable")
+            
+            end
+        end
+    end;
+
+    dist := setValue(dist, i, row);
+    next := setValue(next, i, row_next)
+
+end;
+
+forNodes k in g do
+    forNodes i in g do
+        forNodes j in g do
+
+            row_i := getValue(dist, i);
+
+            dik := getValue(row_i, k);
+            dkj := getValue(getValue(dist, k), j);
+            dij := getValue(row_i, j);
+
+            cond dik + dkj < dij then
+                
+                row_i := setValue(row_i, j, dik + dkj);
+                dist := setValue(dist, i, row_i);
+
+                row_i_next := getValue(next, i);
+                row_i_next := setValue(row_i_next, j, getValue(getValue(next, i), k));
+                next := setValue(next, i, row_i_next)
+
+            end
+        end
+    end
+end;
+
+g_mc := graph [];
+
+forNodes i in g do
+
+    forNodes j in g do
+
+        cond !(i == j) then
+            
+            g_mc := addEdge(g_mc, edge(i, j, getValue(getValue(dist, i), j)))
+        
+        end
+
+    end
+
+end;
+
+paths := getNodeMap(g);
+
+forNodes i in g do
+
+    path_from_i := getNodeMap(g);
+
+    forNodes j in g do
+
+        path_from_i_to_j := emptyList;
+
+        curr := i;
+        path_from_i_to_j := appendList(path_from_i_to_j, curr);
+        inalcanzable := false;
+
+        while !(curr == j) && !inalcanzable do
+
+            currNext := getValue(getValue(next, curr), j);
+
+            cond currNext == "inalcanzable" then
+                
+                inalcanzable := true
+                
+            else
+
+                curr := currNext;
+                path_from_i_to_j := appendList(path_from_i_to_j, curr)
+            
+            end
+
+        end;
+
+        cond inalcanzable then
+
+            path_from_i_to_j := emptyList
+
+        end;
+
+        path_from_i := setValue(path_from_i, j, path_from_i_to_j)
+    
+    end;
+    
+    paths := setValue(paths, i, path_from_i)
+
+end;
+
+print paths

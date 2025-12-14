@@ -1,5 +1,3 @@
-// Otro BFS pero intentando ver el BFS en formato tree. Por ahora no guarda peso de aristas
-
 g := graph [
     ("1", [("2", 22), ("3", 55)] ),
     ("2", [("1", 22), ("3", 44.5), ("5", 33)] ),
@@ -30,8 +28,6 @@ while !(isEmptyQueue(Q)) do
             // Aca se arma el BFSTree
             bfsTree := addNode(bfsTree, getNode2(neighbor));
             bfsTree := addEdge(bfsTree, edge(node, getNode2(neighbor), getWeight(neighbor)))
-        else
-            skip
         end
     end
 end;

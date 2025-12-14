@@ -18,6 +18,7 @@ data Value = IntValue Integer
            | ListValue [Value]
            | QueueValue Queue
            | UnionFindValue UnionFind
+           | NodeMapValue NodeMap
  deriving (Show, Eq)
 
 -- Tipos de datos especificos
@@ -26,6 +27,7 @@ type Node = String
 data Edge = Edge Node Node Weight deriving (Show, Eq)
 data Queue = Queue [Value] deriving (Show, Eq)
 data UnionFind = UnionFind [(Node, Node)] deriving (Show, Eq)  -- (element, parent)
+type NodeMap = [(Node, Value)]
 
 -- Expresion generica
 data Expr = 
@@ -80,7 +82,7 @@ data FunctionType =
   | GraphComplement | GraphUnion | GraphIntersection
   | GetEdges | AdjacentNodes | AdjacentEdges
   | EsCiclico | EsConexo
-  | MetricClosure | MetricClosurePaths
+  | MetricClosure | MetricClosurePaths | GetConnectedComponents
   
   -- Operaciones de Edge
   | GetWeight | GetNode1 | GetNode2
@@ -96,7 +98,10 @@ data FunctionType =
   | IsEmptyQueue
   
   -- Operaciones de UnionFind
-  | Union | Find    
+  | Union | Find
+
+    -- Operaciones de NodeMap
+  | GetNodeMap | GetValue | SetValue | GetNodes
   
  deriving (Show, Eq)
 
@@ -110,4 +115,8 @@ data Comm = Skip
           | Visualize Expr Expr -- Visualize grafo nombreArchivo
           | Print Expr
           | ForNeighbors Variable Expr Expr Expr Comm -- forNeighbors nodeVar in graphExpr from startNodeExpr upto limitExpr do bodyComm end
+          | ForNodes Variable Expr Comm
+          | ForEdges Variable Expr Comm
+          | ForIncident Variable Expr Expr Comm
+          | ForComponent Variable Expr Comm
  deriving (Show, Eq)
