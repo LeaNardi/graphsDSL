@@ -22,8 +22,8 @@ main = do args <- getArgs
                                     case eval ast of
                                         Left err -> putStrLn "Error de evaluación:" >> putStrLn err
                                         Right (env, ticks, output) -> do
-                                            -- putStrLn "\nResultado de la evaluación:"
-                                            -- putStrLn (formatEval (Right (env, ticks, output)))
+                                            putStrLn "\nResultado de la evaluación:"
+                                            putStrLn (formatEval (Right (env, ticks, output)))
                                             putStrLn "\nSalida por pantalla:"
                                             putStrLn (formatOutput (Right (env, ticks, output)))
 

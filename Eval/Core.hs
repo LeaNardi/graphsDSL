@@ -89,6 +89,7 @@ evalComm (ForNeighbors nodeVar graphExpr startNodeExpr limitExpr bodyComm) = do
               update nodeVar (StringValue n)
               evalComm bodyComm
           ) nodes
+
 evalComm (ForNodes nodeVar graphExpr bodyComm) = do
     graphVal <- evalExpr graphExpr
 
@@ -103,6 +104,7 @@ evalComm (ForNodes nodeVar graphExpr bodyComm) = do
               update nodeVar (StringValue n)
               evalComm bodyComm
           ) allNodes
+
 evalComm (ForEdges edgeVar graphExpr bodyComm) = do
     graphVal <- evalExpr graphExpr
 
@@ -123,6 +125,7 @@ evalComm (ForEdges edgeVar graphExpr bodyComm) = do
               update edgeVar (EdgeValue (Edge u v w))
               evalComm bodyComm
           ) edges
+
 evalComm (ForIncident edgeVar graphExpr nodeExpr bodyComm) = do
     graphVal <- evalExpr graphExpr
     nodeVal  <- evalExpr nodeExpr
@@ -144,6 +147,7 @@ evalComm (ForIncident edgeVar graphExpr nodeExpr bodyComm) = do
               update edgeVar (EdgeValue e)
               evalComm bodyComm
           ) incident
+
 evalComm (ForComponent gVar gExpr bodyComm) = do
     graphVal <- evalExpr gExpr
 
@@ -478,6 +482,7 @@ evalExpr (FunCall AdjacentNodes [graphExpr, nodeExpr]) = do
         Just neighbors -> return (ListValue [StringValue n | (n, _) <- neighbors])
         Nothing -> throw $ "El Nodo '" ++ node ++ "' no se encontró en el grafo"
     _ -> throw "AdjacentNodes requiere un tipo Graph"
+
 evalExpr (FunCall AdjacentEdges [graphExpr, nodeExpr]) = do
   graphVal <- evalExpr graphExpr
   nodeVal <- evalExpr nodeExpr
@@ -490,6 +495,7 @@ evalExpr (FunCall AdjacentEdges [graphExpr, nodeExpr]) = do
         Just neighbors -> return (ListValue [EdgeValue (Edge node n w) | (n, w) <- neighbors]) -- Muestra aristas en orden nodo -> n (salientes)
         Nothing -> throw $ "El Nodo '" ++ node ++ "' no se encontró en el grafo"
     _ -> throw "AdjacentEdges requiere un tipo Graph"
+
 evalExpr (FunCall GraphComplement [graphExpr]) = do
   graphVal <- evalExpr graphExpr
   case graphVal of
@@ -501,6 +507,7 @@ evalExpr (FunCall GraphComplement [graphExpr]) = do
                        | (n, neighbors) <- adjList]
       return (GraphValue (Graph complement))
     _ -> throw "GraphComplement requiere un tipo Graph"
+    
 evalExpr (FunCall GraphUnion [graph1Expr, graph2Expr]) = do
   graph1Val <- evalExpr graph1Expr
   graph2Val <- evalExpr graph2Expr

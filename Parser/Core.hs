@@ -192,7 +192,7 @@ parseFunction = do
     "setValue" -> return $ FunCall SetValue args
     "getNodes" -> return $ FunCall GetNodes args 
     
-    _ -> fail $ "Unknown function: " ++ funName
+    _ -> fail $ "Funcion no definida: " ++ funName
 
 -- ====================
 -- Constructores de grafos
@@ -328,7 +328,7 @@ parseVisualize = do
   args <- parens gdsl $ sepBy parseExpr (comma gdsl) --2 argumentos
   case args of
     [graphExpr, fileNameExpr] -> return $ Visualize graphExpr fileNameExpr
-    _ -> fail "visualize espera 2 argumentos: visualize(grafo, \"nombre.png\"" --Este error lo manejamos desde aca o desde otro lado?
+    _ -> fail "visualize espera 2 argumentos: visualize(grafo, \"nombre.png\""
 
 parseForNeighbors :: Parser Comm
 parseForNeighbors = do
