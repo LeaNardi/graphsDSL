@@ -9,4 +9,18 @@ g := graph [
 visualize(g, "ComponentesConexas");
 componentesConexas := getConnectedComponents(g);
 print("Componentes conexas:");
-print(componentesConexas)
+print(componentesConexas);
+
+
+h := graph [
+    ("1", [("2", 22)] ),
+    ("2", [("1", 22),("3", 1), ("5", 33)] ),
+    ("3", [("2", 1), ("4", 11)] ),
+    ("4", [("3", 11)] ),
+    ("5", [("2", 33)] )
+];
+
+visualize(h, "ComponentesConexash");
+componentesConexash := getConnectedComponents(h);
+print("Componentes conexas h:");
+print(componentesConexash)

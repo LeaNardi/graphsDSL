@@ -7,6 +7,6 @@ h := addNode(g, "3");
 h := addEdge(h, edge("1", "4", 5));
 h := addEdge(h, edge("1", "4", 68));
 
-visualize(g, "Original", "a");
+visualize(g, "Original");
 visualize(h, "Resultado");
 print(h)
