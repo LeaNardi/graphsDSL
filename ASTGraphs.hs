@@ -22,9 +22,9 @@ data Value = IntValue Integer
  deriving (Show, Eq)
 
 -- Tipos de datos especificos
-data Graph = Graph [(Node, [(Node, Weight)])] deriving (Show, Eq)
 type Node = String
 data Edge = Edge Node Node Weight deriving (Show, Eq)
+data Graph = Graph [(Node, [(Node, Weight)])] deriving (Show, Eq)
 data Queue = Queue [Value] deriving (Show, Eq)
 data UnionFind = UnionFind [(Node, Node)] deriving (Show, Eq)  -- (element, parent)
 type NodeMap = [(Node, Value)]

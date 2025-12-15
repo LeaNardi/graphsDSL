@@ -86,18 +86,29 @@ g := graph [
     ("C", [("A", 3), ("B", 2), ("D", 6)]),
     ("D", [("B", 4), ("C", 6)])
 ];
+print("Grafo g inicial:");
+print(g);
 
 // addNode: Agregar un nuevo nodo al grafo
 g1 := addNode(g, "E");
+print("g1 := addNode(g, \"E\")");
+print(g1);
+
 
 // deleteNode: Eliminar un nodo del grafo
 g2 := deleteNode(g1, "E");
+print("g2 := deleteNode(g1, \"E\")");
+print(g2);
 
 // addEdge: Agregar una arista ponderada entre nodos
 g3 := addEdge(g, edge("A", "D", 10));
+print("g3 = addEdge(g, edge(\"A\", \"D\", 10)");
+print(g3);
 
 // deleteEdge: Eliminar una arista entre nodos
 g4 := deleteEdge(g3, edge("A", "D", 10));
+print("g4 := deleteEdge(g, edge(\"A\", \"D\", 10)");
+print(g4);
 
 // 8: Funciones de Análisis de Grafos
 
@@ -138,12 +149,18 @@ i := graph [
 
 // complement: Obtener complemento de un grafo
 compG := graphComplement(g);
+print("compG := graphComplement(g);");
+print(compG);
 
 // graphUnion: Unión de dos grafos
 unionG := graphUnion(g, h);
+print("unionG := graphUnion(g, h);");
+print(unionG);
 
 // intersection: Intersección de dos grafos
 interG := graphIntersection(g, h);
+print("interG := graphIntersection(g, h);");
+print(interG);
 
 // metricClosure: Cierre métrico del grafo (caminos más cortos entre todos los pares)
 visualize(i, "demo_metric_closure_input");
@@ -180,13 +197,17 @@ print listLen;
 firstElem := headList(myList);
 print firstElem;
 
+// last: Obtener último elemento de la lista
+lastElem := lastList(myList);
+print lastElem;
+
 // tail: Obtener lista sin el primer elemento
 restList := tailList(myList);
 print restList;
 
-// last: Obtener último elemento de la lista
-lastElem := lastList(myList);
-print lastElem;
+// init: Obtener lista sin el ultimo elemento
+firstList := initList(myList);
+print firstList;
 
 // add: Agregar elemento a la lista
 extList := appendList(myList, "frutilla");
@@ -286,6 +307,8 @@ print total;
 
 // 16: Visualization
 // visualize: Exportar grafo a formato Graphviz
-visualize(g, "demo_original");
+visualize(g, "Grafo_Original_g");
+visualize(h, "Grafo_Original_h");
 visualize(compG, "demo_complement");
-visualize(unionG, "demo_union")
+visualize(unionG, "demo_union");
+visualize(interG, "demo_intersection")
