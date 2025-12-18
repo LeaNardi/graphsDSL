@@ -5,8 +5,6 @@ import Parser.Parser (parseGraphs)
 import Parser.Formatter (formatAST)
 import Eval.Eval (eval)
 import Eval.Formatter (formatEval, formatOutput)
-import Control.Monad.IO.Class (liftIO)
-import Control.Monad (void)
 
 main :: IO ()
 main = do args <- getArgs
@@ -17,8 +15,8 @@ main = do args <- getArgs
 
                                 -- Para mostrar AST y resultado de Eval:
                                 Right ast -> do
-                                    -- putStrLn "AST parseado:"
-                                    -- putStrLn (formatAST ast)
+                                    putStrLn "AST parseado:"
+                                    putStrLn (formatAST ast)
                                     case eval ast of
                                         Left err -> putStrLn "Error de evaluación:" >> putStrLn err
                                         Right (env, ticks, output) -> do

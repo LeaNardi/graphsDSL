@@ -2,7 +2,7 @@ module Parser.Core where
 
 import Text.Parsec ( notFollowedBy, choice)
 import Text.ParserCombinators.Parsec ( try, sepBy, (<|>), Parser, option, many )
-import Text.Parsec.Token ( GenTokenParser( integer, reserved, identifier, brackets, parens, stringLiteral, reservedOp, comma), float )
+import Text.Parsec.Token ( GenTokenParser( integer, reserved, identifier, brackets, parens, stringLiteral, reservedOp, comma, float) )
 import Data.Functor (($>))
 
 import Parser.Lexer ( gdsl )

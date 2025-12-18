@@ -1,8 +1,7 @@
 module Parser.Parser ( parseGraphs ) where
 
 import Text.ParserCombinators.Parsec ( parse, SourceName, ParseError, eof, Parser )
-import Text.Parsec.Token ( makeTokenParser, GenLanguageDef(reservedOpNames, commentStart, commentEnd, commentLine, reservedNames), GenTokenParser(whiteSpace), TokenParser )
-import Text.Parsec.Language (emptyDef)
+import Text.Parsec.Token ( GenTokenParser(whiteSpace) )
 
 import Parser.Lexer ( gdsl )
 import Parser.Core ( parseComm )

@@ -2,7 +2,6 @@ module Eval.Core ( evalComm, evalExpr ) where
 
 import ASTGraphs ( Comm(..), Expr(..), BinOpType(..), CompOpType(..), FunctionType(..), Value(..), Graph(..), Node, Edge(..), Queue(..), UnionFind(..), Weight )
 import Eval.MonadClasses ( MonadError(..), MonadState(lookfor, update), MonadTick(..), MonadOutput(..) )
-import Control.Monad ( when )
 import Data.List (intersect, intercalate)
 import System.IO.Unsafe (unsafePerformIO)
 import System.Process (callCommand)
