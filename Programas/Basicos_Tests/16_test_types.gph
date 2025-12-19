@@ -1,4 +1,0 @@
-x := 1;
-print x;
-x := "a";
-print x
