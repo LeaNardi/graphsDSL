@@ -32,4 +32,13 @@ end;
 print "Componentes conexas del grafo:";
 forComponent h in g do
     print h
+end;
+
+nodes := getNodes(g);
+print "nodes:";
+print nodes;
+
+for node in nodes do
+    print "Nodo";
+    print node
 end

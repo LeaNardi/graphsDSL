@@ -442,6 +442,16 @@ evalExpr (FunCall AddEdge [graphExpr, edgeExpr]) = do
         _ -> throw "AddEdge requiere que la arista sea de tipo Edge"
     _ -> throw "AddEdge requiere un tipo Graph"
 
+evalExpr (FunCall GetNodes [graphExpr]) = do
+  graphVal <- evalExpr graphExpr
+  tick
+  case graphVal of
+    GraphValue (Graph adjList) -> do
+      -- traemos todos los nodos de la lista de adyacencia
+      let allNodes = map fst adjList
+      return (ListValue (map StringValue allNodes))
+    _ -> throw "GetNodes requiere un tipo Graph"
+    
 evalExpr (FunCall GetEdges [graphExpr]) = do
   graphVal <- evalExpr graphExpr
   tick

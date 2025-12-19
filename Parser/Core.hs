@@ -147,6 +147,7 @@ parseFunction = do
     "graphComplement" -> return $ FunCall GraphComplement args
     "graphUnion" -> return $ FunCall GraphUnion args
     "graphIntersection" -> return $ FunCall GraphIntersection args
+    "getNodes" -> return $ FunCall GetNodes args
     "getEdges" -> return $ FunCall GetEdges args
     "adjacentNodes" -> return $ FunCall AdjacentNodes args
     "adjacentEdges" -> return $ FunCall AdjacentEdges args
