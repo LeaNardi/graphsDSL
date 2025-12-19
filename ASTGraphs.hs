@@ -101,7 +101,7 @@ data FunctionType =
   | Union | Find
 
     -- Operaciones de NodeMap
-  | GetNodeMap | GetValue | SetValue | GetNodes
+  | GetNodeMap | GetValue | SetValue | GetNodesMap
   
  deriving (Show, Eq)
 

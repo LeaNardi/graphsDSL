@@ -918,13 +918,13 @@ evalExpr (FunCall SetValue [mapExpr, keyExpr, valExpr]) = do
         | k0 == k  = (k,v) : rest
         | otherwise = (k0,v0) : updateKey rest k v
 
-evalExpr (FunCall GetNodes [mapExpr]) = do
+evalExpr (FunCall GetNodesMap [mapExpr]) = do
     mapVal <- evalExpr mapExpr
     tick
     case mapVal of
         NodeMapValue pairs ->
             return (ListValue [StringValue k | (k,_) <- pairs])
-        _ -> throw "getNodes requiere un NodeMap"
+        _ -> throw "getNodesMap requiere un NodeMap"
 
 -- Las no implementadas tiran error, aunque si el parser esta bien hecho, evita que lleguemos a este punto
 evalExpr (FunCall f args) = throw ("La funcion " ++ show f ++ "(" ++ show args ++ ")" ++ " no fue implementada o los argumentos son invalidos")

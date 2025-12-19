@@ -11,7 +11,7 @@ start := "A1";
 
 dist := getNodeMap(g);
 prev := getNodeMap(g);
-nodes := getNodes(dist);
+nodes := getNodesMap(dist);
 
 for u in nodes do
     dist := setValue(dist, u, 999999)

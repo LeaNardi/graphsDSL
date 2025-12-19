@@ -192,7 +192,7 @@ parseFunction = do
     "getNodeMap" -> return $ FunCall GetNodeMap args
     "getValue" -> return $ FunCall GetValue args
     "setValue" -> return $ FunCall SetValue args
-    "getNodes" -> return $ FunCall GetNodes args 
+    "getNodesMap" -> return $ FunCall GetNodesMap args 
     
     _ -> fail $ "Funcion no definida: " ++ funName
 
