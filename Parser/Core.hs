@@ -2,7 +2,7 @@ module Parser.Core where
 
 import Text.Parsec ( notFollowedBy, choice)
 import Text.ParserCombinators.Parsec ( try, sepBy, (<|>), Parser, option, many )
-import Text.Parsec.Token ( GenTokenParser( integer, reserved, identifier, brackets, parens, stringLiteral, reservedOp, comma), float )
+import Text.Parsec.Token ( GenTokenParser( integer, reserved, identifier, brackets, parens, stringLiteral, reservedOp, comma, float) )
 import Data.Functor (($>))
 
 import Parser.Lexer ( gdsl )
@@ -16,6 +16,8 @@ parseComm = do
   first <- parseSimpleComm
   rest <- many (reservedOp gdsl ";" >> parseSimpleComm)
   return $ foldl Seq first rest
+  -- Opcion con chainl1:
+  -- parseComm = chainl1 parseSimpleComm (reservedOp gdsl ";"  >> return Seq)
 
 parseSimpleComm :: Parser Comm
 parseSimpleComm = try parseSkip
@@ -145,6 +147,7 @@ parseFunction = do
     "graphComplement" -> return $ FunCall GraphComplement args
     "graphUnion" -> return $ FunCall GraphUnion args
     "graphIntersection" -> return $ FunCall GraphIntersection args
+    "getNodes" -> return $ FunCall GetNodes args
     "getEdges" -> return $ FunCall GetEdges args
     "adjacentNodes" -> return $ FunCall AdjacentNodes args
     "adjacentEdges" -> return $ FunCall AdjacentEdges args
@@ -190,7 +193,7 @@ parseFunction = do
     "getNodeMap" -> return $ FunCall GetNodeMap args
     "getValue" -> return $ FunCall GetValue args
     "setValue" -> return $ FunCall SetValue args
-    "getNodes" -> return $ FunCall GetNodes args 
+    "getMapKeys" -> return $ FunCall GetMapKeys args 
     
     _ -> fail $ "Funcion no definida: " ++ funName
 

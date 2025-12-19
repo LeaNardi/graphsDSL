@@ -118,15 +118,15 @@ functioncall ::= functionname ( arglist )
 
 
 functionname ::= addNode | deleteNode | addEdge | deleteEdge
-        | graphComplement | graphUnion | graphIntersection | getEdges | adjacentNodes | adjacentEdges
+        | graphComplement | graphUnion | graphIntersection | getEdges | getNodes | adjacentNodes | adjacentEdges
         | getWeight | getNode1 | getNode2
         | lenList | appendList | consList | concatList | headList | lastList | tailList | initList | reverseList | sortByWeight
-        | queueLen | enqueue | dequeue | peek | isEmpty
+        | queueLen | enqueue | dequeue | peek | isEmptyQueue
         | union | find
         | esCiclico | esConexo | inList | isEmptyList
         | metricClosure | metricClosurePaths
         | getConnectedComponents
-
+        | getNodeMap | getValue | setValue | getMapKeys
 
 arglist ::= expr
         | expr , arglist

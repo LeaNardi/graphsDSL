@@ -80,7 +80,7 @@ data FunctionType =
   -- Operaciones de Graph
     AddNode | DeleteNode | AddEdge | DeleteEdge
   | GraphComplement | GraphUnion | GraphIntersection
-  | GetEdges | AdjacentNodes | AdjacentEdges
+  | GetNodes | GetEdges | AdjacentNodes | AdjacentEdges
   | EsCiclico | EsConexo
   | MetricClosure | MetricClosurePaths | GetConnectedComponents
   
@@ -101,7 +101,7 @@ data FunctionType =
   | Union | Find
 
     -- Operaciones de NodeMap
-  | GetNodeMap | GetValue | SetValue | GetNodes
+  | GetNodeMap | GetValue | SetValue | GetMapKeys
   
  deriving (Show, Eq)
 
