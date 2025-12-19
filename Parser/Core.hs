@@ -16,6 +16,8 @@ parseComm = do
   first <- parseSimpleComm
   rest <- many (reservedOp gdsl ";" >> parseSimpleComm)
   return $ foldl Seq first rest
+  -- Opcion con chainl1:
+  -- parseComm = chainl1 parseSimpleComm (reservedOp gdsl ";"  >> return Seq)
 
 parseSimpleComm :: Parser Comm
 parseSimpleComm = try parseSkip

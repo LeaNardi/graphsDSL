@@ -221,19 +221,20 @@ checkUndirectedGraph adjList = all checkEdge allEdges
 
 evalExpr :: (MonadState m, MonadError m, MonadTick m) => Expr -> m Value
 -- Literales
-evalExpr (IntLit n) = return (IntValue n)
-evalExpr (FloatLit f) = return (FloatValue f)
-evalExpr (BoolLit b) = return (BoolValue b)
-evalExpr (StringLit s) = return (StringValue s)
-evalExpr EmptyList = return (ListValue [])
-evalExpr EmptyQueue = return (QueueValue (Queue []))
+evalExpr (IntLit n) = tick >> return (IntValue n)
+evalExpr (FloatLit f) = tick >> return (FloatValue f)
+evalExpr (BoolLit b) = tick >> return (BoolValue b)
+evalExpr (StringLit s) = tick >> return (StringValue s)
+evalExpr EmptyList = tick >> return (ListValue [])
+evalExpr EmptyQueue = tick >> return (QueueValue (Queue []))
 
 -- Variables
-evalExpr (Var v) = lookfor v
+evalExpr (Var v) = tick >> lookfor v
 
 -- Operaciones aritmeticas binarias
 evalExpr (UMinus e) = do
   val <- evalExpr e
+  tick
   case val of
     IntValue i -> return (IntValue (negate i))
     FloatValue f -> return (FloatValue (negate f))
@@ -276,6 +277,7 @@ evalExpr (BinOp op l r) = do
 -- Operaciones Booleanas
 evalExpr (Not e) = do
   val <- evalExpr e
+  tick
   case val of
     BoolValue b -> return (BoolValue (not b))
     _ -> throw "La operacion Not requiere que todos sean Bool"
@@ -283,6 +285,7 @@ evalExpr (Not e) = do
 evalExpr (Comparison op l r) = do
   lval <- evalExpr l
   rval <- evalExpr r
+  tick
   case op of
     Eq -> case (lval, rval) of
       (IntValue l', IntValue r') -> return (BoolValue (l' == r'))
@@ -311,6 +314,7 @@ evalExpr (Comparison op l r) = do
 -- Expresiones Condicionales
 evalExpr (Question cond thenE elseE) = do
   condVal <- evalExpr cond
+  tick
   case condVal of
     BoolValue False -> evalExpr elseE
     BoolValue True -> evalExpr thenE
@@ -319,6 +323,7 @@ evalExpr (Question cond thenE elseE) = do
 -- Constructores de grafos
 evalExpr (ValuedGraph nodeList) = do
   graph <- mapM evalNodeEntry nodeList
+  tick
   -- validamos que el grafo sea no dirigido
   if not (checkUndirectedGraph graph)
     then throw "Grafo no dirigido invalido: las aristas deben ser simetricas (si existe A->B, debe existir B->A con el mismo peso)"
@@ -347,6 +352,7 @@ evalExpr (ValuedEdge n1Expr n2Expr wExpr) = do
   n1Val <- evalExpr n1Expr
   n2Val <- evalExpr n2Expr
   wVal <- evalExpr wExpr
+  tick
   n1 <- case n1Val of
     StringValue s -> return s
     _ -> throw "El nodo1 de la arista debe ser de tipo String"
@@ -362,14 +368,17 @@ evalExpr (ValuedEdge n1Expr n2Expr wExpr) = do
 -- Colecciones
 evalExpr (ListConstruct exprs) = do
   vals <- mapM evalExpr exprs
+  tick
   return (ListValue vals)
 
 evalExpr (QueueConstruct exprs) = do
   vals <- mapM evalExpr exprs
+  tick
   return (QueueValue (Queue vals))
 
 evalExpr (UnionFindConstruct pairs) = do
   ufPairs <- mapM evalPair pairs
+  tick
   return (UnionFindValue (UnionFind ufPairs))
   where
     evalPair (nodeExpr, parentExpr) = do
@@ -386,17 +395,21 @@ evalExpr (UnionFindConstruct pairs) = do
 -- Operaciones de Edge
 evalExpr (FunCall GetNode1 [edgeExpr]) = do
   edgeVal <- evalExpr edgeExpr
+  tick
   case edgeVal of
     EdgeValue (Edge n1 _ _) -> return (StringValue n1)
     _ -> throw "GetNode1 requiere un tipo Edge"
+
 evalExpr (FunCall GetNode2 [edgeExpr]) = do
   edgeVal <- evalExpr edgeExpr
+  tick
   case edgeVal of
     EdgeValue (Edge _ n2 _) -> return (StringValue n2)
     _ -> throw "GetNode2 requiere un tipo Edge"
 
 evalExpr (FunCall GetWeight [edgeExpr]) = do
   edgeVal <- evalExpr edgeExpr
+  tick
   case edgeVal of
     EdgeValue (Edge _ _ w) -> return (FloatValue w)
     _ -> throw "GetWeight requiere un tipo Edge"
@@ -405,6 +418,7 @@ evalExpr (FunCall GetWeight [edgeExpr]) = do
 evalExpr (FunCall AddNode [graphExpr, nodeExpr]) = do
   graphVal <- evalExpr graphExpr
   nodeVal <- evalExpr nodeExpr
+  tick
   case graphVal of
     GraphValue (Graph adjList) -> do
       node <- case nodeVal of
@@ -418,6 +432,7 @@ evalExpr (FunCall AddNode [graphExpr, nodeExpr]) = do
 evalExpr (FunCall AddEdge [graphExpr, edgeExpr]) = do
   graphVal <- evalExpr graphExpr
   edgeVal <- evalExpr edgeExpr
+  tick
   case graphVal of
     GraphValue graph -> do
       case edgeVal of
@@ -429,6 +444,7 @@ evalExpr (FunCall AddEdge [graphExpr, edgeExpr]) = do
 
 evalExpr (FunCall GetEdges [graphExpr]) = do
   graphVal <- evalExpr graphExpr
+  tick
   case graphVal of
     GraphValue (Graph adjList) -> do
       -- traemos todas las aristas de la lista de adyacencia
@@ -442,6 +458,7 @@ evalExpr (FunCall GetEdges [graphExpr]) = do
 evalExpr (FunCall DeleteNode [graphExpr, nodeExpr]) = do
   graphVal <- evalExpr graphExpr
   nodeVal <- evalExpr nodeExpr
+  tick
   case graphVal of
     GraphValue (Graph adjList) -> do
       node <- case nodeVal of
@@ -456,6 +473,7 @@ evalExpr (FunCall DeleteNode [graphExpr, nodeExpr]) = do
 evalExpr (FunCall DeleteEdge [graphExpr, edgeExpr]) = do
   graphVal <- evalExpr graphExpr
   edgeVal <- evalExpr edgeExpr
+  tick
   case graphVal of
     GraphValue (Graph adjList) -> do
       edge <- case edgeVal of
@@ -472,6 +490,7 @@ evalExpr (FunCall DeleteEdge [graphExpr, edgeExpr]) = do
 evalExpr (FunCall AdjacentNodes [graphExpr, nodeExpr]) = do
   graphVal <- evalExpr graphExpr
   nodeVal <- evalExpr nodeExpr
+  tick
   case graphVal of
     GraphValue (Graph adjList) -> do
       node <- case nodeVal of
@@ -485,6 +504,7 @@ evalExpr (FunCall AdjacentNodes [graphExpr, nodeExpr]) = do
 evalExpr (FunCall AdjacentEdges [graphExpr, nodeExpr]) = do
   graphVal <- evalExpr graphExpr
   nodeVal <- evalExpr nodeExpr
+  tick
   case graphVal of
     GraphValue (Graph adjList) -> do
       node <- case nodeVal of
@@ -497,6 +517,7 @@ evalExpr (FunCall AdjacentEdges [graphExpr, nodeExpr]) = do
 
 evalExpr (FunCall GraphComplement [graphExpr]) = do
   graphVal <- evalExpr graphExpr
+  tick
   case graphVal of
     GraphValue (Graph adjList) -> do
       let nodes = map fst adjList
@@ -510,6 +531,7 @@ evalExpr (FunCall GraphComplement [graphExpr]) = do
 evalExpr (FunCall GraphUnion [graph1Expr, graph2Expr]) = do
   graph1Val <- evalExpr graph1Expr
   graph2Val <- evalExpr graph2Expr
+  tick
   case (graph1Val, graph2Val) of
     (GraphValue (Graph adj1), GraphValue (Graph adj2)) -> do
       -- Combina nodos de ambos grafos
@@ -525,6 +547,7 @@ evalExpr (FunCall GraphUnion [graph1Expr, graph2Expr]) = do
 evalExpr (FunCall GraphIntersection [graph1Expr, graph2Expr]) = do
   graph1Val <- evalExpr graph1Expr
   graph2Val <- evalExpr graph2Expr
+  tick
   case (graph1Val, graph2Val) of
     (GraphValue (Graph adj1), GraphValue (Graph adj2)) -> do
       -- Solo nodos presentes en ambos grafos
@@ -541,6 +564,7 @@ evalExpr (FunCall GraphIntersection [graph1Expr, graph2Expr]) = do
 
 evalExpr (FunCall EsCiclico [graphExpr]) = do
   graphVal <- evalExpr graphExpr
+  tick
   case graphVal of
     GraphValue (Graph adjList) -> do
       -- Verificar si el grafo tiene un ciclo usando DFS
@@ -562,6 +586,7 @@ evalExpr (FunCall EsCiclico [graphExpr]) = do
 
 evalExpr (FunCall GetConnectedComponents [graphExpr]) = do
   graphVal <- evalExpr graphExpr
+  tick
   case graphVal of
     GraphValue (Graph adjList) -> do
       case adjList of
@@ -596,6 +621,7 @@ evalExpr (FunCall GetConnectedComponents [graphExpr]) = do
 
 evalExpr (FunCall EsConexo [graphExpr]) = do
   graphVal <- evalExpr graphExpr
+  tick
   case graphVal of
     GraphValue (Graph adjList) -> do
       -- Verificacion si el grafo es conexo usando BFS
@@ -619,6 +645,7 @@ evalExpr (FunCall EsConexo [graphExpr]) = do
 -- Operaciones de List
 evalExpr (FunCall LenList [listExpr]) = do
   listVal <- evalExpr listExpr
+  tick
   case listVal of
     ListValue xs -> return (IntValue (fromIntegral (length xs)))
     _ -> throw "LenList requiere un tipo List"
@@ -626,6 +653,7 @@ evalExpr (FunCall LenList [listExpr]) = do
 evalExpr (FunCall AppendList [listExpr, elemExpr]) = do
   listVal <- evalExpr listExpr
   elemVal <- evalExpr elemExpr
+  tick
   case listVal of
     ListValue xs -> return (ListValue (xs ++ [elemVal]))
     _ -> throw "AppendList requiere un tipo List"
@@ -633,6 +661,7 @@ evalExpr (FunCall AppendList [listExpr, elemExpr]) = do
 evalExpr (FunCall ConsList [listExpr, elemExpr]) = do
   listVal <- evalExpr listExpr
   elemVal <- evalExpr elemExpr
+  tick
   case listVal of
     ListValue xs -> return (ListValue (elemVal:xs))
     _ -> throw "ConsList requiere un tipo List"
@@ -640,12 +669,14 @@ evalExpr (FunCall ConsList [listExpr, elemExpr]) = do
 evalExpr (FunCall ConcatList [listExpr1, listExpr2]) = do
   listVal1 <- evalExpr listExpr1
   listVal2 <- evalExpr listExpr2
+  tick
   case (listVal1, listVal2) of
     (ListValue xs, ListValue ys) -> return (ListValue (xs ++ ys))
     _ -> throw "ConcatList requiere de tipos List"
 
 evalExpr (FunCall HeadList [listExpr]) = do
   listVal <- evalExpr listExpr
+  tick
   case listVal of
     ListValue (x:_) -> return x
     ListValue [] -> throw "HeadList llamado en una lista vacía"
@@ -653,6 +684,7 @@ evalExpr (FunCall HeadList [listExpr]) = do
 
 evalExpr (FunCall LastList [listExpr]) = do
   listVal <- evalExpr listExpr
+  tick
   case listVal of
     ListValue [] -> throw "LastList llamado en una lista vacía"
     ListValue (xs) -> return (last xs)
@@ -660,6 +692,7 @@ evalExpr (FunCall LastList [listExpr]) = do
 
 evalExpr (FunCall TailList [listExpr]) = do
   listVal <- evalExpr listExpr
+  tick
   case listVal of
     ListValue (_:xs) -> return (ListValue xs)
     ListValue [] -> throw "TailList llamado en una lista vacía"
@@ -667,6 +700,7 @@ evalExpr (FunCall TailList [listExpr]) = do
 
 evalExpr (FunCall InitList [listExpr]) = do
   listVal <- evalExpr listExpr
+  tick
   case listVal of
     ListValue [] -> throw "InitList llamado en una lista vacía"
     ListValue xs -> return (ListValue (init xs))
@@ -674,12 +708,14 @@ evalExpr (FunCall InitList [listExpr]) = do
 
 evalExpr (FunCall ReverseList [listExpr]) = do
   listVal <- evalExpr listExpr
+  tick
   case listVal of
     ListValue xs -> return (ListValue (reverse xs))
     _ -> throw "ReverseList requiere un tipo List"
 
 evalExpr (FunCall SortByWeight [listExpr]) = do
   listVal <- evalExpr listExpr
+  tick
   case listVal of
     ListValue edges -> do
       let sortedEdges = sortByEdgeWeight edges
@@ -701,12 +737,14 @@ evalExpr (FunCall SortByWeight [listExpr]) = do
 evalExpr (FunCall InList [elemExpr, listExpr]) = do
   elemVal <- evalExpr elemExpr
   listVal <- evalExpr listExpr
+  tick
   case listVal of
     ListValue xs -> return (BoolValue (elemVal `elem` xs))
     _ -> throw "InList requiere un tipo List"
 
 evalExpr (FunCall IsEmptyList [listExpr]) = do
   listVal <- evalExpr listExpr
+  tick
   case listVal of
     ListValue [] -> return (BoolValue True)
     ListValue _ -> return (BoolValue False)
@@ -715,6 +753,7 @@ evalExpr (FunCall IsEmptyList [listExpr]) = do
 -- Operaciones de Queue
 evalExpr (FunCall QueueLen [queueExpr]) = do
   queueVal <- evalExpr queueExpr
+  tick
   case queueVal of
     QueueValue (Queue xs) -> return (IntValue (fromIntegral (length xs)))
     _ -> throw "QueueLen requiere un tipo Queue"
@@ -722,12 +761,14 @@ evalExpr (FunCall QueueLen [queueExpr]) = do
 evalExpr (FunCall Enqueue [queueExpr, elemExpr]) = do
   queueVal <- evalExpr queueExpr
   elemVal <- evalExpr elemExpr
+  tick
   case queueVal of
     QueueValue (Queue xs) -> return (QueueValue (Queue (xs ++ [elemVal])))
     _ -> throw "Enqueue requiere un tipo Queue"
 
 evalExpr (FunCall Dequeue [queueExpr]) = do
   queueVal <- evalExpr queueExpr
+  tick
   case queueVal of
     QueueValue (Queue (_:xs)) -> return (QueueValue (Queue xs))
     QueueValue (Queue []) -> throw "Dequeue llamado en una cola vacía"
@@ -735,6 +776,7 @@ evalExpr (FunCall Dequeue [queueExpr]) = do
 
 evalExpr (FunCall Peek [queueExpr]) = do
   queueVal <- evalExpr queueExpr
+  tick
   case queueVal of
     QueueValue (Queue (x:_)) -> return x
     QueueValue (Queue []) -> throw "Peek llamado en una cola vacía"
@@ -742,6 +784,7 @@ evalExpr (FunCall Peek [queueExpr]) = do
 
 evalExpr (FunCall IsEmptyQueue [queueExpr]) = do
   queueVal <- evalExpr queueExpr
+  tick
   case queueVal of
     QueueValue (Queue []) -> return (BoolValue True)
     QueueValue (Queue _) -> return (BoolValue False)
@@ -751,6 +794,7 @@ evalExpr (FunCall IsEmptyQueue [queueExpr]) = do
 evalExpr (FunCall Find [nodeExpr, ufExpr]) = do
   nodeVal <- evalExpr nodeExpr
   ufVal <- evalExpr ufExpr
+  tick
   case (nodeVal, ufVal) of
     (_, UnionFindValue (UnionFind pairs)) -> do
       node <- case nodeVal of
@@ -771,6 +815,7 @@ evalExpr (FunCall Union [node1Expr, node2Expr, ufExpr]) = do
   node1Val <- evalExpr node1Expr
   node2Val <- evalExpr node2Expr
   ufVal <- evalExpr ufExpr
+  tick
   case (node1Val, node2Val, ufVal) of
     (_, _, UnionFindValue (UnionFind pairs)) -> do
       node1 <- case node1Val of
@@ -803,6 +848,7 @@ evalExpr (FunCall Union [node1Expr, node2Expr, ufExpr]) = do
 
 evalExpr (FunCall MetricClosure [graphExpr]) = do
   graphVal <- evalExpr graphExpr
+  tick
   case graphVal of
     GraphValue g ->
       return (GraphValue (fst (metricClosure g)))
@@ -810,6 +856,7 @@ evalExpr (FunCall MetricClosure [graphExpr]) = do
 
 evalExpr (FunCall MetricClosurePaths [graphExpr]) = do
   graphVal <- evalExpr graphExpr
+  tick
   case graphVal of
     GraphValue g ->
       let paths = snd (metricClosure g)
@@ -824,6 +871,7 @@ evalExpr (FunCall MetricClosurePaths [graphExpr]) = do
 
 evalExpr (FunCall GetNodeMap [graphExpr]) = do
     graphVal <- evalExpr graphExpr
+    tick
     case graphVal of
         GraphValue (Graph adj) ->
             let ns = map fst adj
@@ -834,6 +882,7 @@ evalExpr (FunCall GetNodeMap [graphExpr]) = do
 evalExpr (FunCall GetValue [mapExpr, keyExpr]) = do
     mapVal <- evalExpr mapExpr
     keyVal <- evalExpr keyExpr
+    tick
     key <- case keyVal of
               StringValue s -> return s
               _ -> throw "getValue requiere que la clave sea String"
@@ -848,6 +897,7 @@ evalExpr (FunCall SetValue [mapExpr, keyExpr, valExpr]) = do
     mapVal <- evalExpr mapExpr
     keyVal <- evalExpr keyExpr
     valVal <- evalExpr valExpr
+    tick
 
     key <- case keyVal of
               StringValue s -> return s
@@ -870,6 +920,7 @@ evalExpr (FunCall SetValue [mapExpr, keyExpr, valExpr]) = do
 
 evalExpr (FunCall GetNodes [mapExpr]) = do
     mapVal <- evalExpr mapExpr
+    tick
     case mapVal of
         NodeMapValue pairs ->
             return (ListValue [StringValue k | (k,_) <- pairs])
