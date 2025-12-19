@@ -127,7 +127,7 @@ functionname ::= addNode | deleteNode | addEdge | deleteEdge
         | metricClosure | metricClosurePaths
         | getConnectedComponents
         | getNodeMap
-        | getNodesMap
+        | getMapKeys
         | getValue
         | setValue
 
