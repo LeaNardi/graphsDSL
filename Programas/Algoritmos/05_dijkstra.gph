@@ -6,6 +6,7 @@ g := graph[
   ("B2", [("B1",1),("A2",1),("B3",1)]),
   ("B3", [("B2",1),("A3",1)])
 ];
+visualize(g, "Dijkstra_Original");
 
 start := "A1";
 
