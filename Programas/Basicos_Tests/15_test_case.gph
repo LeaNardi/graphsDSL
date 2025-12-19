@@ -1,0 +1,6 @@
+variable := 1;
+Variable := 2;
+CADENA := "This is a string";
+print variable;
+print Variable;
+print CADENA

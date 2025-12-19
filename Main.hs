@@ -16,7 +16,8 @@ main = do args <- getArgs
                                 -- Para mostrar AST y resultado de Eval:
                                 Right ast -> do
                                     putStrLn "AST parseado:"
-                                    putStrLn (formatAST ast)
+                                    -- putStrLn (formatAST ast)
+                                    print ast
                                     case eval ast of
                                         Left err -> putStrLn "Error de evaluación:" >> putStrLn err
                                         Right (env, ticks, output) -> do
